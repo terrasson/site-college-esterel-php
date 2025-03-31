@@ -1,0 +1,64 @@
+RÉSUMÉ DE LA MIGRATION NODE.JS VERS PHP - COLLÈGE ESTÉREL
+
+1. OBJECTIF PRINCIPAL
+-------------------
+- Migration du site du Collège Estérel de Node.js vers PHP
+- Simplification de l'architecture pour une meilleure compatibilité avec IONOS
+
+2. RÉALISATIONS ACTUELLES
+------------------------
+- Création du nouveau repository GitHub : site-college-esterel-php
+- Copie de tous les fichiers du projet original dans la nouvelle structure
+- Création de la structure de base des dossiers :
+  /public/
+  ├── index.php
+  ├── admin/
+  ├── api/
+  ├── assets/
+  ├── css/
+  ├── js/
+  └── uploads/
+
+3. ÉLÉMENTS À CONVERTIR
+----------------------
+a) Fichiers HTML vers PHP :
+   - index.html → index.php
+   - admin-diaporama.html → admin/diaporama.php
+   - admin-photos-direction.html → admin/photos-direction.php
+   - admin-photos-cuisine.html → admin/photos-cuisine.php
+   - admin-documents-direction.html → admin/documents-direction.php
+   - admin-menu-cuisine.html → admin/menu-cuisine.php
+   - admin-bandeau-defilant.html → admin/bandeau-defilant.php
+
+b) Conversion technique :
+   - Routes API Node.js vers PHP
+   - Système d'authentification
+   - Gestion des sessions
+
+4. ÉLÉMENTS À CONSERVER TELS QUELS
+--------------------------------
+- Fichiers CSS
+- JavaScript côté client
+- Assets (images, fonts)
+- Structure des uploads
+- Design et interface utilisateur
+
+5. FONCTIONNALITÉS CRITIQUES À MAINTENIR
+-------------------------------------
+- Diaporama dynamique
+- Système d'upload des photos
+- Gestion des menus de la cuisine
+- Gestion des documents de la direction
+- Bandeau défilant
+- Système de rotation des images
+
+6. PROCHAINES ÉTAPES
+------------------
+1. Conversion des fichiers HTML en PHP
+2. Mise en place du système d'authentification PHP
+3. Adaptation des routes API
+4. Tests des fonctionnalités
+5. Déploiement sur IONOS
+
+Note : Le projet original Node.js reste fonctionnel pendant toute la durée de la migration
+pour assurer la continuité du service. 
