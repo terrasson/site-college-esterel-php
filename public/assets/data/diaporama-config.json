@@ -1,0 +1,82 @@
+{
+  "cuisine": {
+    "medias": [
+      {
+        "type": "image",
+        "path": "/uploads/cuisine/cuisine_1743187774975.webp",
+        "name": "cuisine_1743187774975.webp",
+        "duration": 5,
+        "transition": "fade",
+        "comment": "",
+        "textPosition": "top-left",
+        "enabled": true
+      },
+      {
+        "type": "image",
+        "path": "/uploads/cuisine/cuisine_1743188294035.webp",
+        "name": "cuisine_1743188294035.webp",
+        "duration": 5,
+        "transition": "fade",
+        "comment": "ça bosse dur 💪",
+        "textPosition": "top-left",
+        "enabled": true
+      },
+      {
+        "type": "image",
+        "path": "/uploads/cuisine/cuisine_1743188295069.webp",
+        "name": "cuisine_1743188295069.webp",
+        "duration": 5,
+        "transition": "fade",
+        "comment": "",
+        "textPosition": "top-left",
+        "enabled": true
+      },
+      {
+        "type": "image",
+        "path": "/uploads/cuisine/cuisine_1743188295438.webp",
+        "name": "cuisine_1743188295438.webp",
+        "duration": 5,
+        "transition": "fade",
+        "comment": "",
+        "textPosition": "top-left",
+        "enabled": true
+      },
+      {
+        "type": "image",
+        "path": "/uploads/cuisine/cuisine_1743188295705.webp",
+        "name": "cuisine_1743188295705.webp",
+        "duration": 5,
+        "transition": "fade",
+        "comment": "",
+        "textPosition": "top-left",
+        "enabled": true
+      }
+    ],
+    "schedules": []
+  },
+  "direction": {
+    "medias": [
+      {
+        "type": "image",
+        "path": "/uploads/direction/direction_1743191311739.webp",
+        "name": "direction_1743191311739.webp",
+        "duration": 5,
+        "transition": "fade",
+        "comment": "",
+        "textPosition": "top-left",
+        "enabled": true
+      },
+      {
+        "type": "image",
+        "path": "/uploads/direction/direction_1743191321146.webp",
+        "name": "direction_1743191321146.webp",
+        "duration": 5,
+        "transition": "fade",
+        "comment": "",
+        "textPosition": "top-left",
+        "enabled": true
+      }
+    ],
+    "schedules": []
+  }
+}
