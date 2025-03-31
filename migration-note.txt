@@ -1,0 +1,224 @@
+MIGRATION VERCEL VERS IONOS - SUIVI DU PROJET
+
+1. INFORMATIONS NÉCESSAIRES
+- URL du repository GitHub actuel (Vercel) : https://github.com/terrasson/Site-College-Esterel.git
+- URL du site Vercel : https://site-college-esterel-e66kn9rkn-terrassons-projects.vercel.app
+- Nom d'utilisateur GitHub : terrasson
+- Emplacement du nouveau projet sur votre machine : /Users/fredericterrasson/site-college-esterel/Site-College-Esterel
+- URL du nouveau repository GitHub à créer : https://github.com/terrasson/site-college-esterel-ionos.git
+
+2. ÉTAPES DE MIGRATION
+[✓] Création nouveau projet Cursor
+[  ] Création nouveau repository GitHub
+[  ] Clonage du projet Vercel
+[  ] Configuration base de données IONOS
+[✓] Migration du système de stockage (Vercel Blob vers système de fichiers)
+
+3. ACCÈS IONOS
+- URL du panel d'administration :
+- Informations de connexion base de données :
+  * Host : db5017557615.hosting-data.io
+  * Port : 3306
+  * Nom de la base : dbs14063447
+  * Utilisateur : dbu697756
+  * Mot de passe : (celui que vous avez défini)
+
+4. MODIFICATIONS TECHNIQUES À FAIRE
+[✓] Adaptation du système de stockage
+[  ] Création des tables dans la base de données
+[  ] Modification des routes API
+[✓] Adaptation du système d'authentification
+[  ] Tests des fonctionnalités
+
+5. FONCTIONNALITÉS À MIGRER
+[✓] Upload des médias
+[  ] Gestion du diaporama
+[✓] Système d'authentification
+[  ] Bandeau défilant
+[  ] Affichage des médias
+
+NOTES SUPPLÉMENTAIRES :
+- Le projet est actuellement hébergé sur Vercel
+- Migration prévue vers IONOS avec base de données MySQL
+- Nécessité de remplacer le système Vercel Blob par un système de fichiers classique
+
+=== Configuration des Utilisateurs et Sécurité (28/03/2024) ===
+
+1. Structure de Fichiers
+   - Vérification de la présence des dossiers nécessaires :
+     * public/assets/img/cuisine/
+     * public/assets/img/direction/
+     * public/assets/img/dossier-de-diffusion/
+     * public/assets/data/menu-cuisine/
+     * public/assets/data/document-direction/
+     * college_esterel/uploads/{cuisine,direction,documents}/
+
+2. Configuration de l'Authentification
+   - Système à trois niveaux d'utilisateurs :
+     * admin (accès complet)
+     * cuisine (gestion section cuisine)
+     * direction (gestion section direction)
+   - Les identifiants sont stockés dans le fichier .env
+   - Le fichier .env n'est JAMAIS versionné (présent dans .gitignore)
+
+3. Sécurité sur IONOS
+   - Séparation claire entre back-end et front-end :
+     * Back-end (IONOS) : accessible uniquement par l'administrateur système
+     * Front-end (college-esterel.fr) : accessible aux utilisateurs autorisés
+   - Le fichier .env doit être transféré séparément sur IONOS
+   - Les mots de passe et configurations sensibles restent sécurisés sur le serveur
+
+4. Prochaines étapes
+   - Transférer le fichier .env sur IONOS avec les bons identifiants
+   - Vérifier le bon fonctionnement de l'authentification
+   - Tester les uploads de fichiers avec le nouveau système de stockage local
+
+Note : Les identifiants et mots de passe ne sont jamais stockés dans le code source, 
+uniquement dans le fichier .env qui reste privé et sécurisé sur le serveur.
+
+TÂCHES POUR LE DIAPORAMA ADMINISTRATEUR :
+
+1. Interface Utilisateur
+   - Ajouter une interface pour la personnalisation du texte :
+     * Sélecteur de police (Arial, Times New Roman, etc.)
+     * Contrôle de la taille du texte
+     * Sélecteur de couleur
+     * Options de style (gras, italique)
+     * Position du texte sur l'image
+     * Option pour l'arrière-plan du texte
+   - Ajouter un sélecteur d'emojis :
+     * Grille d'emojis courants
+     * Barre de recherche pour les emojis
+     * Catégories d'emojis
+
+2. Gestion des Médias
+   - Améliorer le drag & drop :
+     * Réorganisation des éléments dans la timeline
+     * Prévisualisation pendant le glisser-déposer
+   - Ajouter des contrôles pour chaque élément :
+     * Durée d'affichage
+     * Type de transition
+     * Activation/désactivation
+
+3. Timeline
+   - Ajouter la prévisualisation en direct :
+     * Aperçu du rendu du texte sur l'image
+     * Aperçu des transitions
+   - Permettre la modification des éléments existants :
+     * Édition du texte
+     * Modification des paramètres
+     * Suppression d'éléments
+
+4. Sauvegarde et Configuration
+   - Améliorer la structure de données :
+     * Ajouter tous les paramètres de style
+     * Gérer les emojis
+     * Sauvegarder les transitions
+   - Implémenter la validation des données
+   - Ajouter la sauvegarde automatique
+
+5. Backend
+   - Créer/Modifier les routes API nécessaires :
+     * Sauvegarde de la configuration complète
+     * Récupération des paramètres
+     * Gestion des polices personnalisées
+   - Optimiser le stockage des données
+   - Gérer les erreurs et les cas limites
+
+6. Tests et Optimisation
+   - Tester toutes les fonctionnalités :
+     * Création de diaporama
+     * Modification
+     * Prévisualisation
+     * Sauvegarde
+   - Optimiser les performances :
+     * Chargement des images
+     * Transitions fluides
+     * Réactivité de l'interface
+
+7. Documentation
+   - Documenter l'utilisation pour les administrateurs
+   - Documenter le code pour la maintenance
+   - Créer des guides pas à pas pour les fonctionnalités principales
+
+PRIORITÉ DES TÂCHES :
+1. Interface de base pour le texte et les emojis
+2. Sauvegarde des configurations
+3. Prévisualisation des éléments
+4. Optimisation et tests
+5. Documentation
+
+Note : Ces modifications nécessiteront des changements dans :
+- public/admin-diaporama.html
+- server.js (routes API)
+- Création de nouveaux fichiers JS pour la gestion du diaporama
+
+=== État d'Avancement au 28/03/2024 ===
+
+TÂCHES TERMINÉES :
+✓ Migration du système de stockage de fichiers (Vercel Blob vers local)
+✓ Configuration de l'authentification
+✓ Upload des photos (cuisine et direction)
+✓ Rotation des photos avec mise à jour instantanée
+✓ Configuration de PM2 pour la stabilité du serveur
+
+TÂCHES EN COURS (Diaporama) :
+[ ] Interface de personnalisation du texte
+[ ] Sélecteur d'emojis
+[ ] Gestion de la timeline
+[ ] Prévisualisation des éléments
+[ ] Sauvegarde des configurations
+
+PROCHAINE SESSION :
+1. Commencer par l'interface de personnalisation du texte :
+   - Ajout des contrôles de texte dans admin-diaporama.html
+   - Implémentation des fonctions JavaScript associées
+   - Tests de la fonctionnalité
+
+RAPPEL DES COMMANDES IMPORTANTES :
+- Gestion du serveur : voir PM2_COMMANDES.md
+- Redémarrage du serveur : pm2 restart college-esterel
+- Voir les logs : pm2 logs college-esterel
+
+=== Migration vers PHP (29/03/2024) ===
+
+OBJECTIFS DE LA MIGRATION :
+1. Conversion du projet Node.js vers PHP
+2. Simplification de l'architecture
+3. Amélioration de la compatibilité avec l'hébergement IONOS
+
+STRUCTURE DU NOUVEAU PROJET :
+/site-college-esterel-php/
+├── public/
+│   ├── index.php (page d'accueil)
+│   ├── admin/
+│   │   └── index.php (interface d'administration)
+│   ├── api/
+│   │   └── config.php (configuration et fonctions communes)
+│   ├── assets/
+│   │   ├── img/
+│   │   ├── data/
+│   │   ├── css/
+│   │   └── js/
+│   └── uploads/
+│       ├── cuisine/
+│       └── direction/
+└── README.md
+
+ÉTAPES DE LA MIGRATION :
+1. [✓] Création du nouveau repository GitHub
+2. [✓] Mise en place de la structure de base
+3. [ ] Migration des fonctionnalités :
+   - [ ] Système d'authentification
+   - [ ] Upload de fichiers
+   - [ ] Gestion du diaporama
+   - [ ] API pour les configurations
+4. [ ] Tests et validation
+5. [ ] Déploiement sur IONOS
+
+Note : Le projet original Node.js reste fonctionnel pendant la migration
+pour assurer la continuité du service.
+
+-
+-
+- 
