@@ -1,0 +1,20 @@
+<?php
+putenv('DB_HOST=db5017557615.hosting-data.io');
+putenv('DB_NAME=dbs14063447');
+putenv('DB_USER=dbu697756');
+putenv('DB_PASS=Esterel83@2024');
+putenv('APP_KEY=e946ed62f2a628eed722bd4b38f1fcff9250f09ad476053069f9451ccf1edff1');
+putenv('ENCRYPTION_KEY=e088804191f3ee4d79992d4758bcac41f2d7552ad1fb9092321984e663ac233f');
+putenv('JWT_SECRET=182fa79e17b67cb51aed19895a656bd9391a15f2cdb6c4c95f67bc1c6d03d6fdc29a37a95ce316a86cc718e30ab8dce7d1099fab427c520063c19964e668ddbc');
+putenv('JWT_EXPIRATION=86400000');
+putenv('APP_DEBUG=true');
+putenv('APP_NAME=Collège Estérel');
+putenv('ADMIN_USERNAME=admin');
+putenv('ADMIN_PASSWORD=Ce5?Huz8,Gep3');
+putenv('CUISINE_USERNAME=cuisine');
+putenv('CUISINE_PASSWORD=Men3>Pe0!Wiv2');
+putenv('DIRECTION_USERNAME=direction');
+putenv('DIRECTION_PASSWORD=Zuv5/Ra7-Hip4');
+putenv('UPLOAD_PATH=/uploads');
+putenv('MAX_UPLOAD_SIZE=5242880');
+putenv('SITE_NAME=Collège Estérel'); 

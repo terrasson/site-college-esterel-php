@@ -1,0 +1,66 @@
+RewriteEngine On
+
+# Rediriger les .html vers .php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)\.html$ $1.php [L,QSA]
+
+# Protection des fichiers sensibles
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "(^#.*#|\.(bak|config|dist|fla|inc|ini|log|psd|sh|sql|sw[op])|~)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Protection du dossier uploads
+<Directory "uploads">
+    Options -Indexes
+    <FilesMatch "^.*\.(php|cgi|pl|htm|html|shtml)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+    <FilesMatch "^.*\.(jpg|jpeg|gif|png|pdf)$">
+        Order deny,allow
+        Allow from all
+    </FilesMatch>
+</Directory>
+
+# Redirection des erreurs
+ErrorDocument 404 /404.php
+ErrorDocument 403 /403.php
+
+# Forcer HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Protection XSS et autres en-têtes de sécurité
+Header set X-XSS-Protection "1; mode=block"
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "SAMEORIGIN"
+Header set Content-Security-Policy "default-src 'self';"
+
+# Configuration PHP
+php_value upload_max_filesize 10M
+php_value post_max_size 10M
+php_value max_execution_time 300
+php_value max_input_time 300
+
+# Protection par défaut - Tout le monde doit être authentifié
+AuthType Basic
+AuthName "Accès restreint"
+Require valid-user
+
+# Exception pour affichage-dynamique.html et les ressources statiques
+<FilesMatch "^(affichage-dynamique\.html|.*\.(css|js|svg|png|jpg|jpeg|gif|ico))$">
+    Satisfy Any
+    Allow from all
+</FilesMatch>
+
+# Exception pour le dossier styles, js et images
+<DirectoryMatch "^/?(styles|js|images|assets)/.*">
+    Satisfy Any
+    Allow from all
+</DirectoryMatch> 
