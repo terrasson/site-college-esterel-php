@@ -6,7 +6,6 @@ require_once __DIR__ . '/api/functions.php';
 // Débogage temporaire
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-var_dump($_SESSION);
 
 // Si l'utilisateur est déjà connecté, rediriger vers navigation.php
 if (isAuthenticated()) {

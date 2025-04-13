@@ -2,24 +2,27 @@
 function loadEnv() {
     $envFile = __DIR__ . '/../../.env';
     if (file_exists($envFile)) {
-        // Débogage
-        error_log("Fichier .env trouvé");
-        error_log("Contenu des variables d'environnement :");
-        error_log("DB_HOST: " . getenv('DB_HOST'));
-        error_log("DB_NAME: " . getenv('DB_NAME'));
-        error_log("DB_USER: " . getenv('DB_USER'));
-        // Ne pas logger DB_PASS pour des raisons de sécurité
+        error_log("Fichier .env trouvé : " . $envFile);
+        
         $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($lines as $line) {
+            error_log("Lecture ligne : " . $line);  // Debug
             if (strpos($line, '=') !== false && strpos($line, '#') !== 0) {
                 list($key, $value) = explode('=', $line, 2);
                 $key = trim($key);
                 $value = trim($value);
                 putenv("$key=$value");
+                error_log("Variable définie : $key = " . getenv($key));  // Debug
             }
         }
+        
+        // Vérification après chargement
+        error_log("Vérification après chargement :");
+        error_log("DB_HOST: " . getenv('DB_HOST'));
+        error_log("DB_NAME: " . getenv('DB_NAME'));
+        error_log("DB_USER: " . getenv('DB_USER'));
     } else {
-        error_log("Fichier .env non trouvé");
+        error_log("Fichier .env non trouvé à : " . $envFile);
     }
 }
 
@@ -35,6 +38,7 @@ function getPDOConnection() {
         $pass = getenv('DB_PASS');
         
         try {
+            // Ajout des options PDO pour le debug
             $pdo = new PDO(
                 "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
                 $user,
@@ -45,8 +49,9 @@ function getPDOConnection() {
                     PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
                 ]
             );
+            error_log("Connexion PDO réussie");
         } catch (PDOException $e) {
-            error_log("Erreur de connexion à la base de données : " . $e->getMessage());
+            error_log("Erreur PDO : " . $e->getMessage());
             throw new Exception("Erreur de connexion à la base de données");
         }
     }

@@ -61,4 +61,38 @@ function getFlashMessage() {
         return $flash;
     }
     return null;
+}
+
+function convertToWebP($sourcePath, $targetPath) {
+    $extension = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
+    
+    // Charger l'image selon son type
+    switch($extension) {
+        case 'jpeg':
+        case 'jpg':
+            $image = imagecreatefromjpeg($sourcePath);
+            break;
+        case 'png':
+            $image = imagecreatefrompng($sourcePath);
+            // Préserver la transparence
+            imagepalettetotruecolor($image);
+            imagealphablending($image, true);
+            imagesavealpha($image, true);
+            break;
+        default:
+            return false;
+    }
+    
+    // Convertir en WebP avec qualité 80%
+    $result = imagewebp($image, $targetPath, 80);
+    
+    // Libérer la mémoire
+    imagedestroy($image);
+    
+    // Supprimer le fichier original après conversion
+    if($result) {
+        unlink($sourcePath);
+    }
+    
+    return $result;
 } 

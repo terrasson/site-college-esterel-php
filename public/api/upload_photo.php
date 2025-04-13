@@ -2,15 +2,29 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/Security.php';
+require_once __DIR__ . '/database.php';
 
-// Désactiver l'affichage des erreurs pour éviter de casser le JSON
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
+// Charger explicitement les variables d'environnement
+loadEnv();
+
+// Activer l'affichage des erreurs
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Fonction pour logger les erreurs
 function logError($message) {
-    error_log("[Upload Error] " . $message);
+    error_log("[Upload Debug] " . $message);
+}
+
+// Log au début du script
+logError("Début du script d'upload");
+
+// Log des informations du fichier
+if (isset($_FILES['file'])) {
+    logError("Fichier reçu : " . print_r($_FILES['file'], true));
+} else {
+    logError("Aucun fichier reçu");
 }
 
 // Vérifier l'authentification
@@ -43,21 +57,47 @@ if (!isset($_FILES['file'])) {
 
 $file = $_FILES['file'];
 
+// Générer un nom de fichier unique
+$newFilename = $type . '_' . time() . '.jpg';
+$uploadDir = __DIR__ . '/../assets/img/' . $type . '/';
+$targetPath = $uploadDir . $newFilename;
+
 // Log des informations du fichier
-logError("Upload tentative - Type: " . $file['type'] . ", Taille: " . $file['size'] . ", Nom: " . $file['name']);
+error_log("[Upload Debug] Début de l'upload");
+error_log("[Upload Debug] Type: " . $file['type']);
+error_log("[Upload Debug] Taille: " . $file['size']);
+error_log("[Upload Debug] Nom: " . $file['name']);
+error_log("[Upload Debug] Chemin temporaire: " . $file['tmp_name']);
+error_log("[Upload Debug] Chemin de destination: " . $targetPath);
 
 // Vérifier s'il y a eu une erreur lors de l'upload
 if ($file['error'] !== UPLOAD_ERR_OK) {
-    $errorMessage = match($file['error']) {
-        UPLOAD_ERR_INI_SIZE => 'Le fichier dépasse la taille maximale autorisée par PHP',
-        UPLOAD_ERR_FORM_SIZE => 'Le fichier dépasse la taille maximale autorisée par le formulaire',
-        UPLOAD_ERR_PARTIAL => 'Le fichier n\'a été que partiellement uploadé',
-        UPLOAD_ERR_NO_FILE => 'Aucun fichier n\'a été uploadé',
-        UPLOAD_ERR_NO_TMP_DIR => 'Dossier temporaire manquant',
-        UPLOAD_ERR_CANT_WRITE => 'Échec de l\'écriture du fichier sur le disque',
-        UPLOAD_ERR_EXTENSION => 'Une extension PHP a arrêté l\'upload du fichier',
-        default => 'Erreur inconnue'
-    };
+    $errorMessage = '';
+    switch($file['error']) {
+        case UPLOAD_ERR_INI_SIZE:
+            $errorMessage = 'Le fichier dépasse la taille maximale autorisée par PHP';
+            break;
+        case UPLOAD_ERR_FORM_SIZE:
+            $errorMessage = 'Le fichier dépasse la taille maximale autorisée par le formulaire';
+            break;
+        case UPLOAD_ERR_PARTIAL:
+            $errorMessage = 'Le fichier n\'a été que partiellement uploadé';
+            break;
+        case UPLOAD_ERR_NO_FILE:
+            $errorMessage = 'Aucun fichier n\'a été uploadé';
+            break;
+        case UPLOAD_ERR_NO_TMP_DIR:
+            $errorMessage = 'Dossier temporaire manquant';
+            break;
+        case UPLOAD_ERR_CANT_WRITE:
+            $errorMessage = 'Échec de l\'écriture du fichier sur le disque';
+            break;
+        case UPLOAD_ERR_EXTENSION:
+            $errorMessage = 'Une extension PHP a arrêté l\'upload du fichier';
+            break;
+        default:
+            $errorMessage = 'Erreur inconnue';
+    }
     logError("Erreur d'upload: " . $errorMessage);
     header('HTTP/1.1 400 Bad Request');
     exit(json_encode(['error' => $errorMessage]));
@@ -71,14 +111,6 @@ if (!in_array($file['type'], $allowedTypes)) {
     exit(json_encode(['error' => 'Type de fichier non autorisé: ' . $file['type']]));
 }
 
-// Générer un nom de fichier unique
-$newFilename = $type . '_' . time() . '.webp';
-$uploadDir = __DIR__ . '/../../assets/img/' . $type . '/';
-$targetPath = $uploadDir . $newFilename;
-
-// Log du chemin de destination
-logError("Chemin de destination: " . $targetPath);
-
 // Créer le dossier s'il n'existe pas
 if (!file_exists($uploadDir)) {
     if (!mkdir($uploadDir, 0755, true)) {
@@ -91,9 +123,13 @@ if (!file_exists($uploadDir)) {
 try {
     // D'abord, déplacer le fichier temporaire
     $tempPath = $uploadDir . 'temp_' . uniqid();
+    error_log("[Upload Debug] Déplacement vers: " . $tempPath);
+    
     if (!move_uploaded_file($file['tmp_name'], $tempPath)) {
+        error_log("[Upload Error] Échec du déplacement du fichier");
         throw new Exception('Impossible de déplacer le fichier temporaire');
     }
+    error_log("[Upload Debug] Fichier déplacé avec succès");
 
     // Créer une image à partir du fichier uploadé
     $sourceImage = null;
@@ -123,21 +159,27 @@ try {
         imagesavealpha($sourceImage, true);
     }
 
-    // Convertir et sauvegarder en WebP
-    if (!imagewebp($sourceImage, $targetPath, 80)) {
-        throw new Exception('Erreur lors de la conversion en WebP');
+    // Convertir et sauvegarder en JPEG
+    if (!imagejpeg($sourceImage, $targetPath, 80)) {
+        throw new Exception('Erreur lors de la conversion en JPEG');
     }
 
     // Libérer la mémoire et supprimer le fichier temporaire
     imagedestroy($sourceImage);
     unlink($tempPath);
     
+    // Une fois que le fichier est sauvegardé, enregistrer dans la base de données
+    $pdo = getPDOConnection();
+    $stmt = $pdo->prepare("INSERT INTO photos_cuisine (url) VALUES (?)");
+    $photoUrl = '/assets/img/' . $type . '/' . $newFilename;
+    $stmt->execute([$photoUrl]);
+    
     echo json_encode([
         'success' => true,
         'message' => 'Photo uploadée avec succès',
         'photo' => [
-            'filename' => $newFilename,
-            'url' => '/assets/img/' . $type . '/' . $newFilename
+            'id' => $pdo->lastInsertId(),
+            'url' => $photoUrl
         ]
     ]);
 } catch (Exception $e) {
