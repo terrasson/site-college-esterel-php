@@ -315,7 +315,11 @@
         z-index: 10;
         pointer-events: none;
         opacity: 0;
-        transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        transition: opacity 0.5s ease-in-out;
+        text-align: center;
+        word-wrap: break-word;
+        max-width: 40%;
+        line-height: 1.4;
     }
 
     .text-overlay.active {
@@ -547,6 +551,71 @@
             max-height: 30px;
         }
     }
+
+    #diaporama-container {
+        width: 100%;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+        background: #000;
+    }
+
+    .slide-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    .text-container {
+        text-align: center;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
+
+    /* Transitions */
+    .transition-fade {
+        opacity: 0;
+        animation: fadeIn 1s forwards;
+    }
+
+    .transition-slide {
+        transform: translateX(100%);
+        animation: slideIn 1s forwards;
+    }
+
+    .transition-zoom {
+        transform: scale(0.8);
+        opacity: 0;
+        animation: zoomIn 1s forwards;
+    }
+
+    .transition-fade-zoom {
+        transform: scale(1.2);
+        opacity: 0;
+        animation: fadeZoomIn 1s forwards;
+    }
+
+    @keyframes fadeIn {
+        to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+        to { transform: translateX(0); }
+    }
+
+    @keyframes zoomIn {
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    @keyframes fadeZoomIn {
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
   </style>
 </head>
 
@@ -732,241 +801,162 @@
     });
 
     // Initialisation des variables globales
-    let cuisineConfig = { medias: [] };
-    let directionConfig = { medias: [] };
-    let cuisineIndex = 0;
-    let directionIndex = 0;
-    let cuisineTimeout = null;
-    let directionTimeout = null;
-    let isFirstLoad = true;
+    let currentSection = 'cuisine';
+    let diaporamaData = null;
+    let currentIndex = 0;
 
-    // Fonction de chargement des configurations
-    async function loadConfigurations() {
+    async function loadDiaporamaConfig() {
         try {
-            // Forcer le chargement au premier appel
-            if (!isFirstLoad) {
-                const cacheKey = 'diaporama_config_timestamp';
-                const lastCheck = sessionStorage.getItem(cacheKey);
-                const now = Date.now();
-
-                // Ne vérifier que toutes les 30 secondes sauf au premier chargement
-                if (lastCheck && (now - parseInt(lastCheck)) < 30000) {
-                    return;
-                }
-            }
-
-            console.log('Chargement des configurations...');
-            const response = await fetch('/api/diaporama-config');
+            console.log('Chargement de la configuration...');
+            const response = await fetch('/api/diaporama_config.php');
             if (!response.ok) {
-                throw new Error(`Erreur HTTP: ${response.status}`);
+                throw new Error('Erreur lors du chargement de la configuration du diaporama');
             }
-            const config = await response.json();
-
-            // Mettre à jour le timestamp
-            sessionStorage.setItem('diaporama_config_timestamp', Date.now().toString());
-
-            // Toujours charger au premier démarrage
-            const configChanged = isFirstLoad || JSON.stringify(config) !== JSON.stringify({
-                cuisine: cuisineConfig,
-                direction: directionConfig
-            });
-
-            if (configChanged) {
-                console.log('Nouvelle configuration détectée ou premier chargement');
-                
-                if (cuisineTimeout) clearTimeout(cuisineTimeout);
-                if (directionTimeout) clearTimeout(directionTimeout);
-
-                // Réinitialiser les indices si nécessaire
-                if (config.cuisine?.medias?.length > 0) {
-                    cuisineConfig = config.cuisine;
-                    cuisineIndex = 0;
-                    showMedia('cuisine', cuisineConfig.medias[cuisineIndex]);
-                } else {
-                    console.log('Aucun média trouvé pour la cuisine');
-                }
-
-                if (config.direction?.medias?.length > 0) {
-                    directionConfig = config.direction;
-                    directionIndex = 0;
-                    showMedia('direction', directionConfig.medias[directionIndex]);
-                } else {
-                    console.log('Aucun média trouvé pour la direction');
-                }
-
-                isFirstLoad = false;
-            }
-        } catch (error) {
-            console.error('Erreur lors du chargement des configurations:', error);
-            // Réessayer dans 5 secondes en cas d'erreur
-            setTimeout(loadConfigurations, 5000);
-        }
-    }
-
-    function showMedia(section, media) {
-        if (!media || !media.path) {
-            console.error(`Média invalide pour ${section}:`, media);
-            return;
-        }
-
-        console.log(`Affichage du média pour ${section}:`, media);
-
-        const imgElement = document.getElementById(`slideshow-image-${section}`);
-        const iframeElement = document.getElementById(`slideshow-document-${section}`);
-        const textOverlay = document.getElementById(`${section}-text`);
-        const mediaContainer = imgElement.parentElement;
-
-        if (!imgElement || !iframeElement || !textOverlay || !mediaContainer) {
-            console.error(`Éléments DOM manquants pour ${section}`);
-            return;
-        }
-
-        // Nettoyer les transitions précédentes
-        const elements = [imgElement, iframeElement];
-        elements.forEach(el => {
-            el.classList.remove('active');
-            el.style.display = 'none';
-            el.className = 'slideshow-media';
-        });
-
-        textOverlay.classList.remove('active');
-        textOverlay.style.display = 'none';
-        textOverlay.className = 'text-overlay';
-
-        const transition = media.transition || 'fade';
-        const duration = Math.max(5, media.duration || 5) * 1000;
-
-        const showWithTransition = (element) => {
-            // Configurer le texte avant d'afficher le média
-            if (media.comment && media.comment.trim() !== '') {
-                configureTextOverlay(textOverlay, media);
-                textOverlay.style.display = 'block';
-                textOverlay.classList.add(`transition-${transition}`);
-            }
-
-            // Afficher et configurer le média
-            element.style.display = 'block';
-            element.classList.add(`transition-${transition}`);
+            const data = await response.json();
+            console.log('Configuration reçue:', data);
             
-            // Forcer un reflow avant d'ajouter les classes active
-            void element.offsetWidth;
-            void textOverlay.offsetWidth;
-
-            // Activer les transitions simultanément
-            requestAnimationFrame(() => {
-                element.classList.add('active');
-                if (media.comment && media.comment.trim() !== '') {
-                    textOverlay.classList.add('active');
-                }
-            });
-        };
-
-        if (media.type === 'image') {
-            const tempImg = new Image();
-            tempImg.onload = () => {
-                imgElement.src = media.path;
-                showWithTransition(imgElement);
-            };
-            tempImg.onerror = () => {
-                console.error(`Erreur de chargement de l'image pour ${section}:`, media.path);
-                scheduleNextMedia(section);
-            };
-            tempImg.src = media.path;
-        } else if (media.type === 'document') {
-            if (media.path.toLowerCase().endsWith('.pdf')) {
-                const viewerUrl = `/pdfjs/web/viewer.html?file=${encodeURIComponent(media.path)}`;
-                iframeElement.src = viewerUrl;
-                showWithTransition(iframeElement);
-
-                iframeElement.onerror = () => {
-                    console.error(`Erreur de chargement du document pour ${section}:`, media.path);
-                    scheduleNextMedia(section);
-                };
+            // Vérifier si nous avons des médias
+            if (data && data[currentSection] && data[currentSection].medias) {
+                console.log(`Nombre de médias trouvés pour ${currentSection}: ${data[currentSection].medias.length}`);
             } else {
-                console.error(`Type de document non supporté pour ${section}:`, media.path);
-                scheduleNextMedia(section);
-                return;
+                console.log('Aucun média trouvé dans la configuration');
             }
+            
+            diaporamaData = data;
+            startDiaporama();
+        } catch (error) {
+            console.error('Erreur détaillée:', error);
         }
-
-        scheduleNextMedia(section, duration);
     }
 
-    function configureTextOverlay(textOverlay, media) {
-        // Réinitialiser les styles
-        textOverlay.style = '';
-        textOverlay.className = 'text-overlay';
+    function startDiaporama() {
+        console.log('Démarrage du diaporama...');
+        console.log('Section courante:', currentSection);
+        console.log('Données disponibles:', diaporamaData);
+        
+        if (!diaporamaData || !diaporamaData[currentSection] || !diaporamaData[currentSection].medias || diaporamaData[currentSection].medias.length === 0) {
+            console.log('Pas de médias à afficher');
+            return;
+        }
 
-        // Appliquer le texte et les styles
-        textOverlay.textContent = media.comment;
+        console.log('Lancement du diaporama avec', diaporamaData[currentSection].medias.length, 'médias');
+        showCurrentMedia();
+    }
 
-        // Appliquer la police avec gestion spéciale pour Dancing Script
-        if (media.fontFamily === 'Dancing Script') {
-            textOverlay.style.fontFamily = "'Dancing Script', cursive";
+    function showCurrentMedia() {
+        console.log('Affichage du média courant...');
+        const medias = diaporamaData[currentSection].medias;
+        if (!medias || medias.length === 0) {
+            console.log('Aucun média à afficher');
+            return;
+        }
+
+        const media = medias[currentIndex];
+        console.log('Média en cours d\'affichage:', media);
+
+        // Utiliser les éléments existants
+        const imgElement = document.getElementById(`slideshow-image-${currentSection}`);
+        const textElement = document.getElementById(`${currentSection}-text`);
+        
+        if (!imgElement || !textElement) {
+            console.error('Éléments du diaporama non trouvés !');
+            return;
+        }
+
+        // Afficher l'image
+        imgElement.src = media.path;
+        imgElement.style.display = 'block';
+        imgElement.className = `slideshow-media transition-${media.transition || 'fade'}`;
+
+        // Afficher le texte si présent
+        if (media.comment) {
+            textElement.textContent = media.comment;
+            textElement.className = `text-overlay ${media.transition || 'fade'}`;
+            textElement.style.fontFamily = media.font || 'Arial';
+            textElement.style.fontSize = `${media.fontSize || 24}px`;
+            textElement.style.color = media.textColor || '#ffffff';
+            
+            // Positionnement du texte
+            textElement.style.position = 'absolute';
+            textElement.style.margin = '20px'; // Marge par rapport aux bords
+            textElement.style.maxWidth = '40%'; // Limiter la largeur du texte
+            
+            // Définir la position
+            switch(media.textPosition || 'bottom-center') {
+                case 'top-left':
+                    textElement.style.top = '0';
+                    textElement.style.left = '0';
+                    break;
+                case 'top-center':
+                    textElement.style.top = '0';
+                    textElement.style.left = '50%';
+                    textElement.style.transform = 'translateX(-50%)';
+                    break;
+                case 'top-right':
+                    textElement.style.top = '0';
+                    textElement.style.right = '0';
+                    break;
+                case 'center-left':
+                    textElement.style.top = '50%';
+                    textElement.style.left = '0';
+                    textElement.style.transform = 'translateY(-50%)';
+                    break;
+                case 'center':
+                    textElement.style.top = '50%';
+                    textElement.style.left = '50%';
+                    textElement.style.transform = 'translate(-50%, -50%)';
+                    break;
+                case 'center-right':
+                    textElement.style.top = '50%';
+                    textElement.style.right = '0';
+                    textElement.style.transform = 'translateY(-50%)';
+                    break;
+                case 'bottom-left':
+                    textElement.style.bottom = '0';
+                    textElement.style.left = '0';
+                    break;
+                case 'bottom-center':
+                    textElement.style.bottom = '0';
+                    textElement.style.left = '50%';
+                    textElement.style.transform = 'translateX(-50%)';
+                    break;
+                case 'bottom-right':
+                    textElement.style.bottom = '0';
+                    textElement.style.right = '0';
+                    break;
+            }
+            
+            if (media.textBackground) {
+                textElement.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                textElement.style.padding = '10px 20px';
+                textElement.style.borderRadius = '5px';
+            }
         } else {
-            textOverlay.style.fontFamily = media.fontFamily || 'Arial';
+            textElement.textContent = '';
+            textElement.className = 'text-overlay';
         }
 
-        // Appliquer les autres styles
-        textOverlay.style.fontSize = `${media.fontSize || 24}px`;
-        textOverlay.style.color = media.textColor || '#ffffff';
-        textOverlay.style.fontWeight = media.fontWeight || 'normal';
-        textOverlay.style.fontStyle = media.fontStyle || 'normal';
-        textOverlay.style.padding = '10px';
-        textOverlay.style.borderRadius = '4px';
-        textOverlay.style.maxWidth = '80%';
-        textOverlay.style.textAlign = 'center';
-        textOverlay.style.position = 'absolute';
-        textOverlay.style.zIndex = '2';
-        textOverlay.style.transition = 'opacity 0.5s ease-in-out';
+        // Ajouter la classe active après un court délai pour déclencher l'animation
+        setTimeout(() => {
+            imgElement.classList.add('active');
+            if (media.comment) {
+                textElement.classList.add('active');
+            }
+        }, 50);
 
-        // Appliquer le fond semi-transparent si nécessaire
-        if (media.hasBackground) {
-            textOverlay.style.background = 'rgba(0, 0, 0, 0.5)';
-        }
-
-        // Positionner le texte
-        const positions = {
-            'top-left': { top: '10px', left: '10px' },
-            'top-center': { top: '10px', left: '50%', transform: 'translateX(-50%)' },
-            'top-right': { top: '10px', right: '10px' },
-            'center': { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },
-            'bottom-left': { bottom: '10px', left: '10px' },
-            'bottom-center': { bottom: '10px', left: '50%', transform: 'translateX(-50%)' },
-            'bottom-right': { bottom: '10px', right: '10px' }
-        };
-
-        const position = positions[media.textPosition] || positions['bottom-center'];
-        Object.assign(textOverlay.style, position);
+        // Passer au média suivant après la durée spécifiée
+        const duration = media.duration || 5;
+        setTimeout(() => {
+            currentIndex = (currentIndex + 1) % medias.length;
+            showCurrentMedia();
+        }, duration * 1000);
     }
 
-    function scheduleNextMedia(section, duration = 5000) {
-        if (section === 'cuisine') {
-            if (cuisineTimeout) clearTimeout(cuisineTimeout);
-            cuisineTimeout = setTimeout(() => {
-                if (cuisineConfig.medias.length > 0) {
-                    cuisineIndex = (cuisineIndex + 1) % cuisineConfig.medias.length;
-                    showMedia('cuisine', cuisineConfig.medias[cuisineIndex]);
-                }
-            }, duration);
-        } else if (section === 'direction') {
-            if (directionTimeout) clearTimeout(directionTimeout);
-            directionTimeout = setTimeout(() => {
-                if (directionConfig.medias.length > 0) {
-                    directionIndex = (directionIndex + 1) % directionConfig.medias.length;
-                    showMedia('direction', directionConfig.medias[directionIndex]);
-                }
-            }, duration);
-        }
-    }
-
-    // Initialisation au chargement de la page
+    // Initialisation
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('Initialisation du diaporama...');
-        // Charger immédiatement les configurations
-        loadConfigurations();
-        // Vérifier les mises à jour toutes les 30 secondes
-        setInterval(loadConfigurations, 30000);
+        loadDiaporamaConfig();
+        // Recharger la configuration toutes les 30 secondes
+        setInterval(loadDiaporamaConfig, 30000);
 
         // Gestion du bouton retour
         const backButton = document.querySelector('.hidden-back-button');

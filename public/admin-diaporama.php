@@ -5,9 +5,14 @@ require_once __DIR__ . '/api/functions.php';
 
 // Vérification de l'authentification
 if (!isAuthenticated()) {
-    header('Location: /index.php');
+    header('Location: /login.php');
     exit;
 }
+
+// Récupérer toutes les photos de cuisine depuis la base de données
+$pdo = getPDOConnection();
+$stmt = $pdo->query("SELECT id, url FROM photos_cuisine ORDER BY id DESC");
+$photos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -506,6 +511,11 @@ if (!isAuthenticated()) {
             transform: scale(1.2);
             background-color: #f0f0f0;
         }
+
+        .clear-btn {
+            background: var(--error-color);
+            margin-left: 1rem;
+        }
     </style>
 </head>
 
@@ -524,7 +534,15 @@ if (!isAuthenticated()) {
             <div class="media-window">
                 <h3>Photos</h3>
                 <div class="media-grid" id="available-images">
-                    <!-- Les photos seront injectées ici par JavaScript -->
+                    <?php foreach ($photos as $photo): ?>
+                    <div class="media-item" draggable="true" data-type="image" data-path="<?= htmlspecialchars($photo['url']) ?>">
+                        <div class="preview-container">
+                            <img src="<?= htmlspecialchars($photo['url']) ?>" alt="<?= htmlspecialchars($photo['filename']) ?>">
+                        </div>
+                        <div class="media-name"><?= htmlspecialchars($photo['filename']) ?></div>
+                        <div class="media-type">Image</div>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
 
@@ -544,6 +562,7 @@ if (!isAuthenticated()) {
 
         <div class="controls-container">
             <button class="btn save-btn" onclick="saveTimeline()">Enregistrer le diaporama</button>
+            <button class="btn clear-btn" onclick="clearTimeline()">Vider le diaporama</button>
         </div>
     </div>
 
@@ -554,153 +573,269 @@ if (!isAuthenticated()) {
             direction: { medias: [], schedules: [] }
         };
 
-        // Fonction pour charger la configuration existante
-        async function loadExistingConfig() {
+        // Charger la configuration initiale
+        async function loadConfig() {
             try {
-                console.log('Chargement de la configuration existante...');
-                const response = await fetch('/api/diaporama-config');
-
+                const response = await fetch('/api/diaporama_config.php');
                 if (!response.ok) {
-                    throw new Error(`Erreur HTTP: ${response.status}`);
+                    throw new Error('Erreur lors du chargement de la configuration');
                 }
-
-                const config = await response.json();
-                console.log('Configuration chargée:', config);
-
-                if (config.error) {
-                    throw new Error(config.error);
-                }
-
-                if (!config.cuisine || !config.direction) {
-                    console.warn('Configuration invalide:', config);
-                    throw new Error('Format de configuration invalide');
-                }
-
-                // Initialiser avec une configuration vide si nécessaire
-                timelineData = {
-                    cuisine: config.cuisine || { medias: [], schedules: [] },
-                    direction: config.direction || { medias: [], schedules: [] }
-                };
-
-                console.log('Timeline data mise à jour:', timelineData);
-
-                // Mettre à jour l'affichage
-                updateTimelineDisplay();
-
+                timelineData = await response.json();
+                validateTimelineData();
+                renderTimeline();
             } catch (error) {
-                console.error('Erreur lors du chargement de la configuration:', error);
-                // Initialiser avec une configuration vide en cas d'erreur
+                console.error('Erreur:', error);
                 timelineData = {
                     cuisine: { medias: [], schedules: [] },
                     direction: { medias: [], schedules: [] }
                 };
-                showNotification('Erreur lors du chargement de la configuration. Une nouvelle configuration vide a été créée.', 'error');
-                updateTimelineDisplay();
+                renderTimeline();
             }
         }
 
-        // Fonction pour sauvegarder la timeline
+        function handleDragStart(e) {
+            const mediaData = {
+                type: this.dataset.type,
+                path: this.dataset.path,
+                name: this.querySelector('.media-name').textContent
+            };
+            e.dataTransfer.setData('text/plain', JSON.stringify(mediaData));
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            try {
+                const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                if (!data.type || !data.path) {
+                    throw new Error('Données de média invalides');
+                }
+                const mediaElement = createTimelineElement(data);
+                updateTimelineData();
+            } catch (error) {
+                console.error('Erreur lors du drop:', error);
+                showStatus('Erreur lors de l\'ajout du média', 'error');
+            }
+        }
+
+        function createTimelineElement(media) {
+            const timelineItem = document.createElement('div');
+            timelineItem.className = 'timeline-item';
+            timelineItem.draggable = true;
+
+            const content = document.createElement('div');
+            content.className = 'timeline-item-content';
+            
+            const previewContainer = document.createElement('div');
+            previewContainer.className = 'preview-container';
+            
+            if (media.type === 'image') {
+                const img = document.createElement('img');
+                img.src = media.path;
+                img.alt = media.name;
+                previewContainer.appendChild(img);
+            }
+
+            content.innerHTML = `
+                <div class="media-name">${media.name}</div>
+                <div class="timeline-controls">
+                    <input type="number" class="duration-input" value="5" min="1" max="60">
+                    <select class="transition-select">
+                        <option value="fade">Fondu</option>
+                        <option value="slide">Glissement</option>
+                        <option value="zoom">Zoom</option>
+                        <option value="fade-zoom">Fondu + Zoom</option>
+                    </select>
+                    <button class="remove-btn" onclick="this.closest('.timeline-item').remove(); updateTimelineData();">×</button>
+                </div>
+                <div class="comment-controls">
+                    <textarea class="comment-input" placeholder="Ajouter un commentaire"></textarea>
+                    <div class="text-controls">
+                        <select class="font-select">
+                            <option value="Arial">Arial</option>
+                            <option value="Dancing Script">Dancing Script</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Verdana">Verdana</option>
+                        </select>
+                        <input type="number" class="font-size-input" value="24" min="12" max="72">
+                        <input type="color" class="color-picker" value="#ffffff">
+                        <select class="position-select">
+                            <option value="top-left" ${media.textPosition === 'top-left' ? 'selected' : ''}>Haut Gauche</option>
+                            <option value="top-center" ${media.textPosition === 'top-center' ? 'selected' : ''}>Haut Centre</option>
+                            <option value="top-right" ${media.textPosition === 'top-right' ? 'selected' : ''}>Haut Droite</option>
+                            <option value="center-left" ${media.textPosition === 'center-left' ? 'selected' : ''}>Centre Gauche</option>
+                            <option value="center" ${media.textPosition === 'center' ? 'selected' : ''}>Centre</option>
+                            <option value="center-right" ${media.textPosition === 'center-right' ? 'selected' : ''}>Centre Droite</option>
+                            <option value="bottom-left" ${media.textPosition === 'bottom-left' ? 'selected' : ''}>Bas Gauche</option>
+                            <option value="bottom-center" ${media.textPosition === 'bottom-center' ? 'selected' : ''}>Bas Centre</option>
+                            <option value="bottom-right" ${media.textPosition === 'bottom-right' ? 'selected' : ''}>Bas Droite</option>
+                        </select>
+                        <label><input type="checkbox" class="background-toggle">Fond</label>
+                        <button class="emoji-btn" onclick="toggleEmojiPicker(this)">😀</button>
+                    </div>
+                </div>
+            `;
+
+            content.insertBefore(previewContainer, content.firstChild);
+            timelineItem.appendChild(content);
+            document.getElementById('timeline').appendChild(timelineItem);
+
+            return timelineItem;
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            
+            const mediaItems = document.querySelectorAll('.media-item');
+            const timeline = document.getElementById('timeline');
+
+            mediaItems.forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+            });
+
+            timeline.addEventListener('dragover', handleDragOver);
+            timeline.addEventListener('drop', handleDrop);
+        });
+
+        function updateTimelineData() {
+            const timeline = document.getElementById('timeline');
+            const items = [...timeline.querySelectorAll('.timeline-item')].map(item => {
+                const content = item.querySelector('.timeline-item-content');
+                const img = content.querySelector('img');
+                const durationInput = content.querySelector('.duration-input');
+                const transitionSelect = content.querySelector('.transition-select');
+                const commentInput = content.querySelector('.comment-input');
+                const fontSelect = content.querySelector('.font-select');
+                const fontSizeInput = content.querySelector('.font-size-input');
+                const colorPicker = content.querySelector('.color-picker');
+                const positionSelect = content.querySelector('.position-select');
+                const backgroundToggle = content.querySelector('.background-toggle');
+
+                return {
+                    type: 'image',
+                    path: img.src,
+                    name: content.querySelector('.media-name').textContent,
+                    duration: parseInt(durationInput.value) || 5,
+                    transition: transitionSelect.value,
+                    comment: commentInput.value,
+                    font: fontSelect.value,
+                    fontSize: parseInt(fontSizeInput.value),
+                    textColor: colorPicker.value,
+                    textPosition: positionSelect.value,
+                    textBackground: backgroundToggle.checked
+                };
+            });
+
+            timelineData[currentSection].medias = items;
+        }
+
         async function saveTimeline() {
             try {
-                // Supprimer toute notification existante
-                const existingNotifications = document.querySelectorAll('.notification');
-                existingNotifications.forEach(notif => notif.remove());
-
-                // Mettre à jour les données avant la sauvegarde
                 updateTimelineData();
-
-                // Vérifier que les données sont valides
-                if (!timelineData.cuisine || !timelineData.direction) {
-                    throw new Error('Structure de données invalide');
-                }
-
-                // Fonction pour nettoyer les chemins de fichiers
-                function cleanPath(path) {
-                    if (!path) return '';
-                    // Supprimer le hostname et les paramètres d'URL si présents
-                    return path.replace(/^https?:\/\/[^\/]+/, '').split('?')[0];
-                }
-
-                // Nettoyer et valider les données avant l'envoi
-                const cleanConfig = {
-                    cuisine: {
-                        medias: timelineData.cuisine.medias.map(media => {
-                            if (!media || !media.path) {
-                                console.warn('Média invalide ignoré:', media);
-                                return null;
-                            }
-
-                            return {
-                                type: media.type || 'image',
-                                path: cleanPath(media.path),
-                                name: media.name || '',
-                                duration: parseInt(media.duration) || 5,
-                                transition: media.transition || 'fade',
-                                comment: media.comment || '',
-                                fontFamily: media.fontFamily || 'Arial',
-                                fontSize: parseInt(media.fontSize) || 24,
-                                textColor: media.textColor || '#ffffff',
-                                textPosition: media.textPosition || 'bottom-center',
-                                fontWeight: media.fontWeight || 'normal',
-                                fontStyle: media.fontStyle || 'normal',
-                                hasBackground: Boolean(media.hasBackground)
-                            };
-                        }).filter(media => media !== null && media.path),
-                        schedules: []
-                    },
-                    direction: {
-                        medias: timelineData.direction.medias.map(media => {
-                            if (!media || !media.path) {
-                                console.warn('Média invalide ignoré:', media);
-                                return null;
-                            }
-
-                            return {
-                                type: media.type || 'image',
-                                path: cleanPath(media.path),
-                                name: media.name || '',
-                                duration: parseInt(media.duration) || 5,
-                                transition: media.transition || 'fade',
-                                comment: media.comment || '',
-                                fontFamily: media.fontFamily || 'Arial',
-                                fontSize: parseInt(media.fontSize) || 24,
-                                textColor: media.textColor || '#ffffff',
-                                textPosition: media.textPosition || 'bottom-center',
-                                fontWeight: media.fontWeight || 'normal',
-                                fontStyle: media.fontStyle || 'normal',
-                                hasBackground: Boolean(media.hasBackground)
-                            };
-                        }).filter(media => media !== null && media.path),
-                        schedules: []
-                    }
-                };
-
-                console.log('Configuration à sauvegarder:', cleanConfig);
-
-                const response = await fetch('/api/diaporama-config', {
+                const response = await fetch('/api/diaporama_config.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(cleanConfig)
+                    body: JSON.stringify(timelineData)
                 });
 
                 if (!response.ok) {
-                    const result = await response.json();
-                    throw new Error(result.message || 'Erreur lors de la sauvegarde');
+                    throw new Error('Erreur lors de la sauvegarde');
                 }
 
-                const result = await response.json();
-                console.log('Résultat de la sauvegarde:', result);
-                showNotification('Diaporama sauvegardé avec succès', 'success');
-
-                // Recharger la configuration après la sauvegarde
-                await loadExistingConfig();
-
+                showStatus('Diaporama sauvegardé avec succès', 'success');
             } catch (error) {
-                console.error('Erreur détaillée:', error);
-                showNotification(`Erreur lors de la sauvegarde: ${error.message}`, 'error');
+                console.error('Erreur:', error);
+                showStatus('Erreur lors de la sauvegarde: ' + error.message, 'error');
             }
+        }
+
+        function showStatus(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        function validateTimelineData() {
+            if (!timelineData.cuisine || !timelineData.direction) {
+                timelineData = {
+                    cuisine: { medias: [], schedules: [] },
+                    direction: { medias: [], schedules: [] }
+                };
+            }
+        }
+
+        function clearTimeline() {
+            if (confirm('Êtes-vous sûr de vouloir vider le diaporama ?')) {
+                document.getElementById('timeline').innerHTML = '';
+                updateTimelineData();
+                showStatus('Diaporama vidé avec succès', 'success');
+            }
+        }
+
+        // Mettre à jour la fonction switchSection pour recharger les médias
+        function switchSection(section) {
+            console.log('Changement de section vers:', section);
+            currentSection = section;
+
+            // Mettre à jour l'apparence des boutons
+            document.getElementById('btn-cuisine').classList.toggle('active', section === 'cuisine');
+            document.getElementById('btn-direction').classList.toggle('active', section === 'direction');
+
+            // Charger les médias de la nouvelle section
+            loadAvailableMedia(section);
+            // Mettre à jour l'affichage de la timeline
+            updateTimelineDisplay();
+        }
+
+        // Fonction pour charger les médias disponibles
+        async function loadAvailableMedia(section) {
+            try {
+                const response = await fetch(`/api/list-photos.php?section=${section}`);
+                if (!response.ok) {
+                    throw new Error('Erreur lors du chargement des médias');
+                }
+                const photos = await response.json();
+                
+                // Mettre à jour la grille des images
+                const imageGrid = document.getElementById('available-images');
+                imageGrid.innerHTML = photos.map(photo => `
+                    <div class="media-item" draggable="true" data-type="image" data-path="${photo.url}">
+                        <div class="preview-container">
+                            <img src="${photo.url}" alt="Photo">
+                        </div>
+                        <div class="media-name">Photo</div>
+                        <div class="media-type">Image</div>
+                    </div>
+                `).join('');
+
+                // Réinitialiser le drag and drop
+                initializeDragAndDrop();
+            } catch (error) {
+                console.error('Erreur:', error);
+                showStatus('Erreur lors du chargement des médias', 'error');
+            }
+        }
+
+        // Fonction pour initialiser le drag and drop
+        function initializeDragAndDrop() {
+            const mediaItems = document.querySelectorAll('.media-item');
+            const timeline = document.getElementById('timeline');
+
+            mediaItems.forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+            });
+
+            timeline.addEventListener('dragover', handleDragOver);
+            timeline.addEventListener('drop', handleDrop);
         }
 
         // Fonction pour mettre à jour l'affichage de la timeline
@@ -722,460 +857,6 @@ if (!isAuthenticated()) {
                         addMediaToTimeline(media);
                     }
                 });
-            }
-        }
-
-        // Fonction pour charger les médias disponibles
-        async function loadAvailableMedia(section) {
-            try {
-                // Charger les images
-                const imagesResponse = await fetch(`/api/list-media/${section}/photos`);
-                const images = await imagesResponse.json();
-                console.log('Photos chargées:', images);
-
-                // Mettre à jour la grille des images
-                const imageGrid = document.getElementById('available-images');
-                imageGrid.innerHTML = images.map(image => `
-                    <div class="media-item" draggable="true" data-type="image" data-path="/uploads/${section}/${image.name}">
-                        <div class="preview-container">
-                            <img src="/uploads/${section}/${image.name}" alt="${image.name}">
-                        </div>
-                        <div class="media-name">${image.name}</div>
-                        <div class="media-type">Image</div>
-                    </div>
-                `).join('');
-
-                try {
-                    // Charger les documents selon la section
-                    const documentsEndpoint = section === 'cuisine' ? '/api/menu-cuisine' : '/api/direction-documents';
-                    const documentsResponse = await fetch(documentsEndpoint);
-                    const documents = await documentsResponse.json();
-                    console.log('Documents chargés:', documents);
-
-                    // Mettre à jour la grille des documents
-                    const documentGrid = document.getElementById('available-documents');
-                    documentGrid.innerHTML = documents.map(doc => {
-                        const filename = doc.filename || doc.name;
-                        const displayName = doc.originalName || filename;
-                        const path = `/assets/data/${section === 'cuisine' ? 'menu-cuisine' : 'direction-documents'}/${filename}`;
-                        const extension = filename.split('.').pop().toLowerCase();
-                        
-                        return `
-                            <div class="media-item" draggable="true" data-type="document" data-path="${path}" data-name="${displayName}">
-                                <div class="preview-container document ${extension}"></div>
-                                <div class="media-name">${displayName}</div>
-                                <div class="media-type">Document</div>
-                            </div>
-                        `;
-                    }).join('');
-                } catch (docError) {
-                    console.warn('Pas de documents disponibles:', docError);
-                    const documentGrid = document.getElementById('available-documents');
-                    documentGrid.innerHTML = '<div class="no-documents">Aucun document disponible</div>';
-                }
-
-                // Ajouter les événements de drag and drop
-                const mediaItems = document.querySelectorAll('.media-item');
-                mediaItems.forEach(item => {
-                    item.addEventListener('dragstart', handleDragStart);
-                    item.addEventListener('dragend', handleDragEnd);
-                });
-
-            } catch (error) {
-                console.error('Erreur lors du chargement des médias:', error);
-                showNotification('Erreur lors du chargement des médias', 'error');
-            }
-        }
-
-        // Fonction pour initialiser le drag and drop
-        function initializeDragAndDrop() {
-            const mediaItems = document.querySelectorAll('.media-item');
-            const timeline = document.getElementById('timeline');
-
-            mediaItems.forEach(item => {
-                item.addEventListener('dragstart', handleDragStart);
-                item.addEventListener('dragend', handleDragEnd);
-            });
-
-            timeline.addEventListener('dragover', handleDragOver);
-            timeline.addEventListener('drop', handleDrop);
-        }
-
-        // Mettre à jour la fonction switchSection pour recharger les médias
-        function switchSection(section) {
-            console.log('Changement de section vers:', section);
-            currentSection = section;
-
-            // Mettre à jour l'apparence des boutons
-            document.getElementById('btn-cuisine').classList.toggle('active', section === 'cuisine');
-            document.getElementById('btn-direction').classList.toggle('active', section === 'direction');
-
-            // Charger les médias de la nouvelle section
-            loadAvailableMedia(section);
-            // Mettre à jour l'affichage de la timeline
-            updateTimelineDisplay();
-        }
-
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('Initialisation de la page...');
-            validateTimelineData();
-            await loadExistingConfig();
-            await loadAvailableMedia(currentSection);
-
-            // Ajouter les écouteurs d'événements pour la timeline
-            const timeline = document.getElementById('timeline');
-            timeline.addEventListener('dragover', handleDragOver);
-            timeline.addEventListener('drop', handleDrop);
-        });
-
-        // Fonction pour vider la timeline
-        function clearTimeline() {
-            console.log('Nettoyage de la timeline pour la section:', currentSection);
-            timelineData[currentSection] = { medias: [], schedules: [] };
-            updateTimelineDisplay();
-        }
-
-        // Ajouter un bouton pour vider la timeline
-        document.querySelector('.controls-container').innerHTML += `
-            <button class="btn clear-btn" onclick="clearTimeline()">Vider le diaporama</button>
-        `;
-
-        // Fonctions de gestion du drag and drop
-        function handleDragStart(e) {
-            console.log('Début du glisser:', this.dataset.path);
-            const mediaData = {
-                type: this.dataset.type,
-                path: this.dataset.path,
-                name: this.querySelector('.media-name').textContent
-            };
-            console.log('Données à transférer:', mediaData);
-            e.dataTransfer.setData('text/plain', JSON.stringify(mediaData));
-            this.classList.add('dragging');
-        }
-
-        function handleDragEnd(e) {
-            console.log('Fin du glisser');
-            this.classList.remove('dragging');
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault(); // Nécessaire pour autoriser le drop
-            e.dataTransfer.dropEffect = 'copy';
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            console.log('Drop détecté');
-
-            try {
-                const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-                console.log('Données du drop:', data);
-
-                if (!data.type || !data.path || !data.name) {
-                    throw new Error('Données de média invalides');
-                }
-
-                // Créer l'élément dans la timeline
-                const mediaElement = createTimelineElement({
-                    type: data.type,
-                    path: data.path,
-                    name: data.name,
-                    duration: 5,
-                    transition: 'fade'
-                });
-
-                // Ajouter à la timeline
-                const timeline = document.getElementById('timeline');
-                timeline.appendChild(mediaElement);
-
-                // Mettre à jour les données
-                updateTimelineData();
-                showNotification('Média ajouté à la timeline', 'success');
-
-            } catch (error) {
-                console.error('Erreur lors du drop:', error);
-                showNotification('Erreur lors de l\'ajout du média', 'error');
-            }
-        }
-
-        // Fonction pour créer un élément dans la timeline
-        function createTimelineElement(data) {
-            const element = document.createElement('div');
-            element.className = 'timeline-item';
-            element.draggable = true;
-
-            // Déterminer l'extension du fichier pour les documents
-            let documentClass = '';
-            if (data.type === 'document') {
-                const extension = data.path.split('.').pop().toLowerCase();
-                documentClass = extension;
-            }
-
-            // Liste complète des transitions disponibles
-            const transitions = [
-                { value: 'fade', label: 'Fondu' },
-                { value: 'slide', label: 'Glissement' },
-                { value: 'zoom', label: 'Zoom' },
-                { value: 'spiral', label: 'Spirale' },
-                { value: 'fade-zoom', label: 'Fondu + Zoom' },
-                { value: 'slide-fade', label: 'Glissement + Fondu' }
-            ];
-
-            const transitionsHtml = transitions.map(t => 
-                `<option value="${t.value}" ${data.transition === t.value ? 'selected' : ''}>${t.label}</option>`
-            ).join('');
-
-            element.innerHTML = `
-                <div class="timeline-item-content">
-                    <div class="preview-container ${data.type === 'document' ? 'document ' + documentClass : ''}">
-                        ${data.type === 'image'
-                            ? `<img src="${data.path}" alt="${data.name}">`
-                            : `<div class="document-preview" data-path="${data.path}"></div>`
-                        }
-                        ${data.comment ? `<div class="preview-text ${data.textPosition} ${data.hasBackground ? 'with-background' : ''}"
-                            style="
-                                font-family: ${data.fontFamily};
-                                font-size: ${data.fontSize}px;
-                                color: ${data.textColor};
-                                font-weight: ${data.fontWeight};
-                                font-style: ${data.fontStyle}
-                            ">${data.comment}</div>` : ''}
-                    </div>
-                    <div class="media-name">${data.name}</div>
-                    <div class="timeline-controls">
-                        <input type="number" value="${data.duration || 5}" min="1" max="60" 
-                            class="duration-input" title="Durée (secondes)">
-                        <select class="transition-select" title="Type de transition">
-                            ${transitionsHtml}
-                        </select>
-                        <button class="remove-btn" onclick="removeTimelineItem(this)" title="Supprimer">×</button>
-                    </div>
-                    <div class="comment-controls">
-                        <input type="text" class="comment-input" placeholder="Ajouter un commentaire" 
-                            value="${data.comment || ''}" title="Commentaire">
-                        <div class="text-controls">
-                            <select class="font-select" title="Police">
-                                <option value="Dancing Script" ${data.fontFamily === 'Dancing Script' ? 'selected' : ''}>Manuscrit</option>
-                                <option value="Arial" ${data.fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
-                                <option value="Times New Roman" ${data.fontFamily === 'Times New Roman' ? 'selected' : ''}>Times New Roman</option>
-                                <option value="Helvetica" ${data.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
-                                <option value="Georgia" ${data.fontFamily === 'Georgia' ? 'selected' : ''}>Georgia</option>
-                                <option value="Verdana" ${data.fontFamily === 'Verdana' ? 'selected' : ''}>Verdana</option>
-                            </select>
-                            <select class="font-weight-select" title="Graisse">
-                                <option value="normal" ${data.fontWeight === 'normal' ? 'selected' : ''}>Normal</option>
-                                <option value="bold" ${data.fontWeight === 'bold' ? 'selected' : ''}>Gras</option>
-                                <option value="lighter" ${data.fontWeight === 'lighter' ? 'selected' : ''}>Fin</option>
-                            </select>
-                            <select class="font-style-select" title="Style">
-                                <option value="normal" ${data.fontStyle === 'normal' ? 'selected' : ''}>Normal</option>
-                                <option value="italic" ${data.fontStyle === 'italic' ? 'selected' : ''}>Italique</option>
-                            </select>
-                            <input type="number" class="font-size-input" 
-                                value="${data.fontSize || '24'}" 
-                                min="16" max="72" 
-                                title="Taille">
-                            <input type="color" class="color-picker" 
-                                value="${data.textColor || '#ffffff'}" 
-                                title="Couleur">
-                            <select class="position-select" title="Position">
-                                <option value="top-left" ${data.textPosition === 'top-left' ? 'selected' : ''}>Haut Gauche</option>
-                                <option value="top-center" ${data.textPosition === 'top-center' ? 'selected' : ''}>Haut Centre</option>
-                                <option value="top-right" ${data.textPosition === 'top-right' ? 'selected' : ''}>Haut Droite</option>
-                                <option value="center" ${data.textPosition === 'center' ? 'selected' : ''}>Centre</option>
-                                <option value="bottom-left" ${data.textPosition === 'bottom-left' ? 'selected' : ''}>Bas Gauche</option>
-                                <option value="bottom-center" ${data.textPosition === 'bottom-center' ? 'selected' : ''}>Bas Centre</option>
-                                <option value="bottom-right" ${data.textPosition === 'bottom-right' ? 'selected' : ''}>Bas Droite</option>
-                            </select>
-                            <div class="background-control">
-                                <input type="checkbox" id="backgroundToggle" class="background-toggle" 
-                                       onchange="updatePreview(this)"
-                                       ${data.hasBackground ? 'checked' : ''}>
-                                <label for="backgroundToggle">Fond semi-transparent</label>
-                            </div>
-                            <button class="emoji-button" onclick="toggleEmojiPicker(this)">😊</button>
-                        </div>
-                    </div>
-                </div>`;
-
-            // Ajouter les événements de drag and drop
-            element.addEventListener('dragstart', handleTimelineItemDragStart);
-            element.addEventListener('dragend', handleTimelineItemDragEnd);
-            element.addEventListener('dragover', handleTimelineItemDragOver);
-            element.addEventListener('drop', handleTimelineItemDrop);
-
-            return element;
-        }
-
-        // Fonction pour mettre à jour la prévisualisation
-        function updatePreview(element) {
-            const timelineItem = element.closest('.timeline-item-content');
-            const previewText = timelineItem.querySelector('.preview-text');
-            
-            // Si le previewText n'existe pas, le créer
-            if (!previewText) {
-                const newPreviewText = document.createElement('div');
-                newPreviewText.className = 'preview-text';
-                const previewContainer = timelineItem.querySelector('.preview-container');
-                previewContainer.appendChild(newPreviewText);
-            }
-
-            const commentInput = timelineItem.querySelector('.comment-input');
-            const fontSelect = timelineItem.querySelector('.font-select');
-            const fontSizeInput = timelineItem.querySelector('.font-size-input');
-            const colorPicker = timelineItem.querySelector('.color-picker');
-            const positionSelect = timelineItem.querySelector('.position-select');
-            const backgroundToggle = timelineItem.querySelector('.background-toggle');
-            const fontWeightSelect = timelineItem.querySelector('.font-weight-select');
-            const fontStyleSelect = timelineItem.querySelector('.font-style-select');
-
-            const text = commentInput.value.trim();
-            
-            if (text) {
-                // Réinitialiser toutes les classes
-                previewText.className = 'preview-text';
-                
-                // Ajouter la position
-                previewText.classList.add(positionSelect.value);
-                
-                // Ajouter le fond si nécessaire
-                if (backgroundToggle && backgroundToggle.checked) {
-                    previewText.classList.add('with-background');
-                }
-
-                // Mettre à jour les styles
-                previewText.textContent = text;
-                previewText.style.fontFamily = fontSelect.value === 'Dancing Script' ? "'Dancing Script', cursive" : fontSelect.value;
-                previewText.style.fontSize = `${fontSizeInput.value}px`;
-                previewText.style.color = colorPicker.value;
-                previewText.style.fontWeight = fontWeightSelect.value;
-                previewText.style.fontStyle = fontStyleSelect.value;
-                previewText.style.display = 'block';
-            } else {
-                // Masquer le texte s'il est vide
-                previewText.style.display = 'none';
-            }
-
-            // Mettre à jour les données
-            updateTimelineData();
-        }
-
-        // Fonction pour mettre à jour les données de la timeline
-        function updateTimelineData() {
-            try {
-                const timeline = document.getElementById('timeline');
-                const items = [...timeline.querySelectorAll('.timeline-item')].map(item => {
-                    const content = item.querySelector('.timeline-item-content');
-                    const previewContainer = content.querySelector('.preview-container');
-                    const isDocument = previewContainer.classList.contains('document');
-                    
-                    // Récupération sécurisée de tous les éléments
-                    const commentInput = content.querySelector('.comment-input');
-                    const fontSelect = content.querySelector('.font-select');
-                    const fontSizeInput = content.querySelector('.font-size-input');
-                    const colorPicker = content.querySelector('.color-picker');
-                    const positionSelect = content.querySelector('.position-select');
-                    const backgroundToggle = content.querySelector('.background-toggle');
-                    const transitionSelect = content.querySelector('.transition-select');
-                    const durationInput = content.querySelector('.duration-input');
-                    const fontWeightSelect = content.querySelector('.font-weight-select');
-                    const fontStyleSelect = content.querySelector('.font-style-select');
-
-                    // Récupération du chemin du média
-                    let path;
-                    if (isDocument) {
-                        const docPreview = content.querySelector('.document-preview');
-                        path = docPreview ? docPreview.dataset.path : previewContainer.dataset.path;
-                    } else {
-                        const img = content.querySelector('img');
-                        path = img ? img.src : '';
-                    }
-
-                    // Nettoyage du chemin
-                    if (path) {
-                        path = path.split('?')[0];
-                        // Supprimer le hostname si présent
-                        path = path.replace(/^https?:\/\/[^\/]+/, '');
-                    }
-
-                    // Construction de l'objet média avec tous les attributs
-                    const mediaData = {
-                        type: isDocument ? 'document' : 'image',
-                        path: path,
-                        name: content.querySelector('.media-name')?.textContent?.trim() || '',
-                        duration: parseInt(durationInput?.value) || 5,
-                        transition: transitionSelect?.value || 'fade',
-                        comment: commentInput?.value || '',
-                        fontFamily: fontSelect?.value || 'Arial',
-                        fontSize: parseInt(fontSizeInput?.value) || 24,
-                        textColor: colorPicker?.value || '#ffffff',
-                        textPosition: positionSelect?.value || 'bottom-center',
-                        fontWeight: fontWeightSelect?.value || 'normal',
-                        fontStyle: fontStyleSelect?.value || 'normal',
-                        hasBackground: backgroundToggle?.checked || false
-                    };
-
-                    // Validation des données
-                    if (!mediaData.path) {
-                        console.error('Chemin manquant pour un média:', mediaData);
-                        throw new Error('Chemin de média manquant');
-                    }
-
-                    // Log pour debug
-                    console.log('Données du média collectées:', mediaData);
-
-                    return mediaData;
-                });
-
-                // Filtrer les éléments invalides
-                const validItems = items.filter(item => item && item.path);
-                
-                // Mise à jour des données
-                timelineData[currentSection].medias = validItems;
-                console.log('Données de timeline mises à jour pour', currentSection, ':', timelineData[currentSection]);
-
-            } catch (error) {
-                console.error('Erreur lors de la mise à jour des données:', error);
-                showNotification('Erreur lors de la mise à jour des données', 'error');
-            }
-        }
-
-        // Fonction pour afficher les notifications
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-
-        // Ajouter une fonction pour vérifier la structure des données
-        function validateTimelineData() {
-            if (!timelineData) {
-                timelineData = {
-                    cuisine: { medias: [], schedules: [] },
-                    direction: { medias: [], schedules: [] }
-                };
-            }
-
-            if (!timelineData.cuisine) {
-                timelineData.cuisine = { medias: [], schedules: [] };
-            }
-
-            if (!timelineData.direction) {
-                timelineData.direction = { medias: [], schedules: [] };
-            }
-
-            if (!Array.isArray(timelineData.cuisine.medias)) {
-                timelineData.cuisine.medias = [];
-            }
-
-            if (!Array.isArray(timelineData.direction.medias)) {
-                timelineData.direction.medias = [];
             }
         }
 
@@ -1276,44 +957,52 @@ if (!isAuthenticated()) {
             updateTimelineData();
         }
 
-        // Fonctions pour la réorganisation dans la timeline
-        function handleTimelineItemDragStart(e) {
-            e.dataTransfer.setData('text/plain', 'timeline-item');
-            this.classList.add('dragging');
-        }
-
-        function handleTimelineItemDragEnd(e) {
-            this.classList.remove('dragging');
-        }
-
-        function handleTimelineItemDragOver(e) {
-            e.preventDefault();
-            const draggingItem = document.querySelector('.timeline-item.dragging');
-            if (draggingItem && draggingItem !== this) {
-                const timeline = document.getElementById('timeline');
-                const siblings = [...timeline.querySelectorAll('.timeline-item:not(.dragging)')];
-                const nextSibling = siblings.find(sibling => {
-                    const rect = sibling.getBoundingClientRect();
-                    return e.clientY < rect.top + rect.height / 2;
-                });
-
-                if (nextSibling) {
-                    timeline.insertBefore(draggingItem, nextSibling);
-                } else {
-                    timeline.appendChild(draggingItem);
-                }
+        // Fonction pour mettre à jour la prévisualisation
+        function updatePreview(element) {
+            const timelineItem = element.closest('.timeline-item-content');
+            const previewText = timelineItem.querySelector('.preview-text');
+            
+            // Si le previewText n'existe pas, le créer
+            if (!previewText) {
+                const newPreviewText = document.createElement('div');
+                newPreviewText.className = 'preview-text';
+                const previewContainer = timelineItem.querySelector('.preview-container');
+                previewContainer.appendChild(newPreviewText);
             }
-        }
 
-        function handleTimelineItemDrop(e) {
-            e.preventDefault();
-            updateTimelineData();
-        }
+            const commentInput = timelineItem.querySelector('.comment-input');
+            const fontSelect = timelineItem.querySelector('.font-select');
+            const fontSizeInput = timelineItem.querySelector('.font-size-input');
+            const colorPicker = timelineItem.querySelector('.color-picker');
+            const positionSelect = timelineItem.querySelector('.position-select');
+            const backgroundToggle = timelineItem.querySelector('.background-toggle');
 
-        // Fonction pour supprimer un élément de la timeline
-        function removeTimelineItem(button) {
-            const timelineItem = button.closest('.timeline-item');
-            timelineItem.remove();
+            const text = commentInput.value.trim();
+            
+            if (text) {
+                // Réinitialiser toutes les classes
+                previewText.className = 'preview-text';
+                
+                // Ajouter la position
+                previewText.classList.add(positionSelect.value);
+                
+                // Ajouter le fond si nécessaire
+                if (backgroundToggle && backgroundToggle.checked) {
+                    previewText.classList.add('with-background');
+                }
+
+                // Mettre à jour les styles
+                previewText.textContent = text;
+                previewText.style.fontFamily = fontSelect.value === 'Dancing Script' ? "'Dancing Script', cursive" : fontSelect.value;
+                previewText.style.fontSize = `${fontSizeInput.value}px`;
+                previewText.style.color = colorPicker.value;
+                previewText.style.display = 'block';
+            } else {
+                // Masquer le texte s'il est vide
+                previewText.style.display = 'none';
+            }
+
+            // Mettre à jour les données
             updateTimelineData();
         }
 
@@ -1322,6 +1011,110 @@ if (!isAuthenticated()) {
                 window.history.back();
             });
         });
+
+        async function addToSlider(id) {
+            try {
+                const response = await fetch('/api/add-to-slider.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erreur lors de l\'ajout au diaporama');
+                }
+
+                const data = await response.json();
+                showStatus('Photo ajoutée au diaporama !', true);
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                showStatus('Erreur lors de l\'ajout au diaporama.', false);
+            }
+        }
+
+        // Gestionnaire d'événements pour les boutons
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('photo-add-to-slider')) {
+                const id = e.target.dataset.id;
+                addToSlider(id);
+            }
+        });
+
+        function renderTimeline() {
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = ''; // Vider la timeline actuelle
+            
+            const currentMedias = timelineData[currentSection].medias;
+            if (!currentMedias || !Array.isArray(currentMedias)) return;
+
+            currentMedias.forEach(media => {
+                if (!media || !media.path) return;
+                
+                const timelineItem = document.createElement('div');
+                timelineItem.className = 'timeline-item';
+                timelineItem.draggable = true;
+
+                const content = document.createElement('div');
+                content.className = 'timeline-item-content';
+                
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'preview-container';
+                
+                if (media.type === 'image') {
+                    const img = document.createElement('img');
+                    img.src = media.path;
+                    img.alt = media.name || '';
+                    previewContainer.appendChild(img);
+                }
+
+                content.innerHTML = `
+                    <div class="media-name">${media.name || ''}</div>
+                    <div class="timeline-controls">
+                        <input type="number" class="duration-input" value="${media.duration || 5}" min="1" max="60">
+                        <select class="transition-select">
+                            <option value="fade" ${media.transition === 'fade' ? 'selected' : ''}>Fondu</option>
+                            <option value="slide" ${media.transition === 'slide' ? 'selected' : ''}>Glissement</option>
+                            <option value="zoom" ${media.transition === 'zoom' ? 'selected' : ''}>Zoom</option>
+                            <option value="fade-zoom" ${media.transition === 'fade-zoom' ? 'selected' : ''}>Fondu + Zoom</option>
+                        </select>
+                        <button class="remove-btn" onclick="this.closest('.timeline-item').remove(); updateTimelineData();">×</button>
+                    </div>
+                    <div class="comment-controls">
+                        <textarea class="comment-input" placeholder="Ajouter un commentaire">${media.comment || ''}</textarea>
+                        <div class="text-controls">
+                            <select class="font-select">
+                                <option value="Arial" ${media.font === 'Arial' ? 'selected' : ''}>Arial</option>
+                                <option value="Dancing Script" ${media.font === 'Dancing Script' ? 'selected' : ''}>Dancing Script</option>
+                                <option value="Times New Roman" ${media.font === 'Times New Roman' ? 'selected' : ''}>Times New Roman</option>
+                                <option value="Verdana" ${media.font === 'Verdana' ? 'selected' : ''}>Verdana</option>
+                            </select>
+                            <input type="number" class="font-size-input" value="${media.fontSize || 24}" min="12" max="72">
+                            <input type="color" class="color-picker" value="${media.textColor || '#ffffff'}">
+                            <select class="position-select">
+                                <option value="top-left" ${media.textPosition === 'top-left' ? 'selected' : ''}>Haut Gauche</option>
+                                <option value="top-center" ${media.textPosition === 'top-center' ? 'selected' : ''}>Haut Centre</option>
+                                <option value="top-right" ${media.textPosition === 'top-right' ? 'selected' : ''}>Haut Droite</option>
+                                <option value="center-left" ${media.textPosition === 'center-left' ? 'selected' : ''}>Centre Gauche</option>
+                                <option value="center" ${media.textPosition === 'center' ? 'selected' : ''}>Centre</option>
+                                <option value="center-right" ${media.textPosition === 'center-right' ? 'selected' : ''}>Centre Droite</option>
+                                <option value="bottom-left" ${media.textPosition === 'bottom-left' ? 'selected' : ''}>Bas Gauche</option>
+                                <option value="bottom-center" ${media.textPosition === 'bottom-center' ? 'selected' : ''}>Bas Centre</option>
+                                <option value="bottom-right" ${media.textPosition === 'bottom-right' ? 'selected' : ''}>Bas Droite</option>
+                            </select>
+                            <label><input type="checkbox" class="background-toggle" ${media.textBackground ? 'checked' : ''}>Fond</label>
+                            <button class="emoji-btn" onclick="toggleEmojiPicker(this)">😀</button>
+                        </div>
+                    </div>
+                `;
+
+                content.insertBefore(previewContainer, content.firstChild);
+                timelineItem.appendChild(content);
+                timeline.appendChild(timelineItem);
+            });
+        }
     </script>
 </body>
 
