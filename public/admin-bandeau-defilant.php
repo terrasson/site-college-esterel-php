@@ -1,3 +1,25 @@
+<?php
+session_start();
+require_once __DIR__ . '/api/config.php';
+require_once __DIR__ . '/api/functions.php';
+require_once __DIR__ . '/api/database.php';
+
+// Vérification de l'authentification
+if (!isAuthenticated()) {
+    header('Location: /index.php');
+    exit;
+}
+
+// Récupérer le message existant
+try {
+    $pdo = getPDOConnection();
+    $stmt = $pdo->query("SELECT message, speed FROM ticker_message ORDER BY id DESC LIMIT 1");
+    $currentMessage = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Erreur : " . $e->getMessage());
+    $currentMessage = ['message' => '', 'speed' => 30];
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -346,14 +368,14 @@
     <form class="message-form" id="messageForm">
       <div class="form-group">
         <label for="tickerMessage">Message du bandeau</label>
-        <textarea id="tickerMessage" placeholder="Saisissez votre message ici..." maxlength="500"></textarea>
+        <textarea id="tickerMessage" placeholder="Saisissez votre message ici..." maxlength="500"><?php echo htmlspecialchars($currentMessage['message'] ?? ''); ?></textarea>
       </div>
 
       <div class="form-group">
         <label for="scrollSpeed">Vitesse de défilement</label>
         <div class="speed-control">
-          <input type="range" id="scrollSpeed" min="10" max="60" value="30" class="speed-slider">
-          <span id="speedValue">30 secondes</span>
+          <input type="range" id="scrollSpeed" min="10" max="60" value="<?php echo htmlspecialchars($currentMessage['speed'] ?? 30); ?>" class="speed-slider">
+          <span id="speedValue"><?php echo htmlspecialchars($currentMessage['speed'] ?? 30) . ' secondes'; ?></span>
         </div>
       </div>
 
@@ -455,7 +477,7 @@
     // Fonction pour sauvegarder le message
     async function saveMessage(message) {
       try {
-        const response = await fetch('/api/save-ticker', {
+        const response = await fetch('/api/save-ticker.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

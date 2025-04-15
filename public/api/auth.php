@@ -66,24 +66,31 @@ try {
             error_log('ID utilisateur trouvé: ' . $user['id']);
         }
 
-        // Vérification du mot de passe
-        if ($user && Security::verifyPassword($password, $user['password_hash'])) {
+        // Vérification du mot de passe avec password_verify()
+        if ($user && password_verify($password, $user['password_hash'])) {
             error_log('Mot de passe vérifié avec succès');
             session_regenerate_id(true);
             
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_role'] = $user['role'];
             $_SESSION['username'] = $user['username'];
+            $_SESSION['authenticated'] = true;
             
             error_log('Session créée : ' . print_r($_SESSION, true));
             
+            // Supprimer tout message d'erreur précédent
+            unset($_SESSION['flash']);
+            
             setFlashMessage('success', 'Connexion réussie !');
-            header('Location: /navigation.php');
+            
+            // Redirection absolue
+            $redirectUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/navigation.php';
+            error_log('Redirection vers : ' . $redirectUrl);
+            header('Location: ' . $redirectUrl);
             exit();
         } else {
             error_log('Échec de l\'authentification : mot de passe incorrect ou utilisateur non trouvé');
             error_log('Hash en base : ' . ($user ? $user['password_hash'] : 'utilisateur non trouvé'));
-            error_log('Tentative avec mot de passe : ' . $password);
             setFlashMessage('error', 'Identifiant ou mot de passe incorrect.');
             header('Location: /index.php');
             exit();

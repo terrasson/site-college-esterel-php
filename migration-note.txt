@@ -219,6 +219,51 @@ STRUCTURE DU NOUVEAU PROJET :
 Note : Le projet original Node.js reste fonctionnel pendant la migration
 pour assurer la continuité du service.
 
+=== Authentification et Sécurité (15/04/2025) ===
+
+ÉTAPES POUR LA MISE EN PRODUCTION DE L'AUTHENTIFICATION :
+
+1. Configuration des Mots de Passe [  ]
+   - Vérifier que le fichier .env contient les bons mots de passe :
+     * ADMIN_PASSWORD=Ce5?Huz8,Gep3
+     * DIRECTION_PASSWORD=Zuv5/Ra7-Hip4
+     * CUISINE_PASSWORD=Men3>Pe0!Wiv2
+   - Vérifier que .env est dans .gitignore
+   - Créer .env.example sans les vrais mots de passe
+
+2. Base de Données [  ]
+   - Vérifier la structure de la table users :
+     * username VARCHAR(50) NOT NULL UNIQUE
+     * password_hash VARCHAR(255) NOT NULL
+     * role VARCHAR(20) NOT NULL
+   - Exécuter update-passwords.php pour mettre à jour les hashs :
+     php public/api/update-passwords.php
+
+3. Sécurité [  ]
+   - Désactiver le mode debug dans .env
+   - Nettoyer les logs de données sensibles
+   - Supprimer les fichiers temporaires :
+     * generate-test-hash.php
+     * test-auth.php
+
+4. Configuration des Sessions [  ]
+   - Dans php.ini ou .htaccess :
+     * session.cookie_secure = On (si HTTPS)
+     * session.cookie_httponly = On
+     * session.cookie_lifetime = 3600 (1 heure)
+
+5. Tests Finaux [  ]
+   - Tester la connexion pour chaque compte :
+     * admin / Ce5?Huz8,Gep3
+     * direction / Zuv5/Ra7-Hip4
+     * cuisine / Men3>Pe0!Wiv2
+   - Vérifier la déconnexion
+   - Tester les redirections
+   - Vérifier les messages d'erreur
+
+IMPORTANT : Les mots de passe ci-dessus sont des exemples.
+Utiliser des mots de passe différents en production !
+
 -
 -
 - 

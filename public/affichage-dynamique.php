@@ -1,18 +1,25 @@
 <?php
 require_once __DIR__ . '/api/config.php';
 require_once __DIR__ . '/api/functions.php';
+require_once __DIR__ . '/api/database.php';
 
 // Récupérer le type depuis l'URL (cuisine par défaut)
 $type = $_GET['type'] ?? 'cuisine';
 
-// Sélectionner la bonne table en fonction du type
+// Valider le type
+if (!in_array($type, ['cuisine', 'direction'])) {
+    $type = 'cuisine';
+}
+
+// Sélectionner la bonne table
 $table = $type === 'direction' ? 'photos_direction' : 'photos_cuisine';
 
 try {
     $pdo = getPDOConnection();
     
-    // Récupérer les photos de la bonne table
-    $stmt = $pdo->query("SELECT url FROM $table ORDER BY id DESC");
+    // Utiliser une requête préparée
+    $stmt = $pdo->prepare("SELECT url FROM " . $table . " ORDER BY id DESC");
+    $stmt->execute();
     $photos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Récupérer la configuration du diaporama
@@ -26,7 +33,11 @@ try {
     $currentConfig = $config[$type] ?? ['medias' => [], 'schedules' => []];
 
 } catch (PDOException $e) {
-    die("Erreur de base de données : " . $e->getMessage());
+    error_log("Erreur PDO : " . $e->getMessage());
+    die("Une erreur est survenue lors de l'accès à la base de données");
+} catch (Exception $e) {
+    error_log("Erreur : " . $e->getMessage());
+    die("Une erreur est survenue");
 }
 ?>
 <!DOCTYPE html>
@@ -103,29 +114,23 @@ try {
       color: white;
       padding: 10px 0;
       z-index: 1000;
-      overflow: hidden;
     }
 
     .ticker-content {
-      position: relative;
       width: 100%;
       overflow: hidden;
+      white-space: nowrap;
     }
 
     #ticker-text {
       display: inline-block;
-      white-space: nowrap;
       padding-left: 100%;
-      transform: translateX(0);
+      animation: ticker 30s linear infinite;
     }
 
     @keyframes ticker {
-      from {
-        transform: translateX(100%);
-      }
-      to {
-        transform: translateX(-100%);
-      }
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
     }
 
     .ticker-text {
@@ -731,7 +736,9 @@ try {
   </main>
 
   <div class="ticker">
-    <div id="ticker-text"></div>
+    <div class="ticker-content">
+        <div id="ticker-text"></div>
+    </div>
   </div>
 
   <script>
@@ -805,27 +812,23 @@ try {
 
     async function initNewsTicker() {
         try {
-            console.log('Tentative de récupération du message...');
-            const response = await fetch('/api/ticker-message');
-            if (!response.ok) {
-                console.log('Réponse non OK:', response.status);
-                return;
-            }
-
+            const response = await fetch('/api/ticker-message.php');
             const data = await response.json();
-            console.log('Message reçu:', data);
             
-            const tickerElement = document.getElementById('ticker-text');
-            if (tickerElement && data.message) {
+            if (data && data.message) {
+                const tickerElement = document.getElementById('ticker-text');
                 tickerElement.textContent = data.message;
+                
+                // Appliquer la vitesse depuis la base de données
                 const duration = data.speed || 30;
                 tickerElement.style.animation = `ticker ${duration}s linear infinite`;
             }
         } catch (error) {
-            console.log('Erreur détaillée:', error);
+            console.error('Erreur ticker:', error);
         }
     }
 
+    // Initialiser et rafraîchir toutes les 5 secondes
     document.addEventListener('DOMContentLoaded', () => {
         initNewsTicker();
         setInterval(initNewsTicker, 5000);

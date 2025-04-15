@@ -3,7 +3,7 @@ require_once __DIR__ . '/config.php';
 
 // Fonction de vérification de l'authentification
 function isAuthenticated() {
-    return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+    return isset($_SESSION['authenticated']) && $_SESSION['authenticated'] === true;
 }
 
 // Fonction de vérification des permissions
