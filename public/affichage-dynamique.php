@@ -1,3 +1,34 @@
+<?php
+require_once __DIR__ . '/api/config.php';
+require_once __DIR__ . '/api/functions.php';
+
+// Récupérer le type depuis l'URL (cuisine par défaut)
+$type = $_GET['type'] ?? 'cuisine';
+
+// Sélectionner la bonne table en fonction du type
+$table = $type === 'direction' ? 'photos_direction' : 'photos_cuisine';
+
+try {
+    $pdo = getPDOConnection();
+    
+    // Récupérer les photos de la bonne table
+    $stmt = $pdo->query("SELECT url FROM $table ORDER BY id DESC");
+    $photos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Récupérer la configuration du diaporama
+    $configFile = __DIR__ . '/api/diaporama_config.json';
+    $config = [];
+    if (file_exists($configFile)) {
+        $config = json_decode(file_get_contents($configFile), true);
+    }
+
+    // Sélectionner la configuration selon le type
+    $currentConfig = $config[$type] ?? ['medias' => [], 'schedules' => []];
+
+} catch (PDOException $e) {
+    die("Erreur de base de données : " . $e->getMessage());
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -803,7 +834,10 @@
     // Initialisation des variables globales
     let currentSection = 'cuisine';
     let diaporamaData = null;
-    let currentIndex = 0;
+    let currentIndex = {
+        cuisine: 0,
+        direction: 0
+    };
 
     async function loadDiaporamaConfig() {
         try {
@@ -815,51 +849,55 @@
             const data = await response.json();
             console.log('Configuration reçue:', data);
             
-            // Vérifier si nous avons des médias
-            if (data && data[currentSection] && data[currentSection].medias) {
-                console.log(`Nombre de médias trouvés pour ${currentSection}: ${data[currentSection].medias.length}`);
+            // Vérifier si nous avons des médias pour les deux sections
+            if (data) {
+                if (data.cuisine && data.cuisine.medias) {
+                    console.log(`Nombre de médias trouvés pour cuisine: ${data.cuisine.medias.length}`);
+                }
+                if (data.direction && data.direction.medias) {
+                    console.log(`Nombre de médias trouvés pour direction: ${data.direction.medias.length}`);
+                }
             } else {
                 console.log('Aucun média trouvé dans la configuration');
             }
             
             diaporamaData = data;
-            startDiaporama();
+            startDiaporama('cuisine');
+            startDiaporama('direction');
         } catch (error) {
             console.error('Erreur détaillée:', error);
         }
     }
 
-    function startDiaporama() {
-        console.log('Démarrage du diaporama...');
-        console.log('Section courante:', currentSection);
-        console.log('Données disponibles:', diaporamaData);
+    function startDiaporama(section) {
+        console.log(`Démarrage du diaporama ${section}...`);
         
-        if (!diaporamaData || !diaporamaData[currentSection] || !diaporamaData[currentSection].medias || diaporamaData[currentSection].medias.length === 0) {
-            console.log('Pas de médias à afficher');
+        if (!diaporamaData || !diaporamaData[section] || !diaporamaData[section].medias || diaporamaData[section].medias.length === 0) {
+            console.log(`Pas de médias à afficher pour ${section}`);
             return;
         }
 
-        console.log('Lancement du diaporama avec', diaporamaData[currentSection].medias.length, 'médias');
-        showCurrentMedia();
+        console.log(`Lancement du diaporama ${section} avec`, diaporamaData[section].medias.length, 'médias');
+        showCurrentMedia(section);
     }
 
-    function showCurrentMedia() {
-        console.log('Affichage du média courant...');
-        const medias = diaporamaData[currentSection].medias;
+    function showCurrentMedia(section) {
+        console.log(`Affichage du média courant pour ${section}...`);
+        const medias = diaporamaData[section].medias;
         if (!medias || medias.length === 0) {
-            console.log('Aucun média à afficher');
+            console.log(`Aucun média à afficher pour ${section}`);
             return;
         }
 
-        const media = medias[currentIndex];
-        console.log('Média en cours d\'affichage:', media);
+        const media = medias[currentIndex[section]];
+        console.log(`Média en cours d'affichage pour ${section}:`, media);
 
         // Utiliser les éléments existants
-        const imgElement = document.getElementById(`slideshow-image-${currentSection}`);
-        const textElement = document.getElementById(`${currentSection}-text`);
+        const imgElement = document.getElementById(`slideshow-image-${section}`);
+        const textElement = document.getElementById(`${section}-text`);
         
         if (!imgElement || !textElement) {
-            console.error('Éléments du diaporama non trouvés !');
+            console.error(`Éléments du diaporama non trouvés pour ${section} !`);
             return;
         }
 
@@ -878,53 +916,12 @@
             
             // Positionnement du texte
             textElement.style.position = 'absolute';
-            textElement.style.margin = '20px'; // Marge par rapport aux bords
-            textElement.style.maxWidth = '40%'; // Limiter la largeur du texte
+            textElement.style.margin = '20px';
+            textElement.style.maxWidth = '40%';
             
             // Définir la position
-            switch(media.textPosition || 'bottom-center') {
-                case 'top-left':
-                    textElement.style.top = '0';
-                    textElement.style.left = '0';
-                    break;
-                case 'top-center':
-                    textElement.style.top = '0';
-                    textElement.style.left = '50%';
-                    textElement.style.transform = 'translateX(-50%)';
-                    break;
-                case 'top-right':
-                    textElement.style.top = '0';
-                    textElement.style.right = '0';
-                    break;
-                case 'center-left':
-                    textElement.style.top = '50%';
-                    textElement.style.left = '0';
-                    textElement.style.transform = 'translateY(-50%)';
-                    break;
-                case 'center':
-                    textElement.style.top = '50%';
-                    textElement.style.left = '50%';
-                    textElement.style.transform = 'translate(-50%, -50%)';
-                    break;
-                case 'center-right':
-                    textElement.style.top = '50%';
-                    textElement.style.right = '0';
-                    textElement.style.transform = 'translateY(-50%)';
-                    break;
-                case 'bottom-left':
-                    textElement.style.bottom = '0';
-                    textElement.style.left = '0';
-                    break;
-                case 'bottom-center':
-                    textElement.style.bottom = '0';
-                    textElement.style.left = '50%';
-                    textElement.style.transform = 'translateX(-50%)';
-                    break;
-                case 'bottom-right':
-                    textElement.style.bottom = '0';
-                    textElement.style.right = '0';
-                    break;
-            }
+            const position = media.textPosition || 'bottom-center';
+            setTextPosition(textElement, position);
             
             if (media.textBackground) {
                 textElement.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
@@ -936,7 +933,7 @@
             textElement.className = 'text-overlay';
         }
 
-        // Ajouter la classe active après un court délai pour déclencher l'animation
+        // Ajouter la classe active après un court délai
         setTimeout(() => {
             imgElement.classList.add('active');
             if (media.comment) {
@@ -947,15 +944,66 @@
         // Passer au média suivant après la durée spécifiée
         const duration = media.duration || 5;
         setTimeout(() => {
-            currentIndex = (currentIndex + 1) % medias.length;
-            showCurrentMedia();
+            currentIndex[section] = (currentIndex[section] + 1) % medias.length;
+            showCurrentMedia(section);
         }, duration * 1000);
+    }
+
+    function setTextPosition(element, position) {
+        element.style.top = 'auto';
+        element.style.bottom = 'auto';
+        element.style.left = 'auto';
+        element.style.right = 'auto';
+        element.style.transform = 'none';
+
+        switch(position) {
+            case 'top-left':
+                element.style.top = '0';
+                element.style.left = '0';
+                break;
+            case 'top-center':
+                element.style.top = '0';
+                element.style.left = '50%';
+                element.style.transform = 'translateX(-50%)';
+                break;
+            case 'top-right':
+                element.style.top = '0';
+                element.style.right = '0';
+                break;
+            case 'center-left':
+                element.style.top = '50%';
+                element.style.left = '0';
+                element.style.transform = 'translateY(-50%)';
+                break;
+            case 'center':
+                element.style.top = '50%';
+                element.style.left = '50%';
+                element.style.transform = 'translate(-50%, -50%)';
+                break;
+            case 'center-right':
+                element.style.top = '50%';
+                element.style.right = '0';
+                element.style.transform = 'translateY(-50%)';
+                break;
+            case 'bottom-left':
+                element.style.bottom = '0';
+                element.style.left = '0';
+                break;
+            case 'bottom-center':
+                element.style.bottom = '0';
+                element.style.left = '50%';
+                element.style.transform = 'translateX(-50%)';
+                break;
+            case 'bottom-right':
+                element.style.bottom = '0';
+                element.style.right = '0';
+                break;
+        }
     }
 
     // Initialisation
     document.addEventListener('DOMContentLoaded', () => {
         loadDiaporamaConfig();
-        // Recharger la configuration toutes les 30 secondes
         setInterval(loadDiaporamaConfig, 30000);
 
         // Gestion du bouton retour

@@ -9,6 +9,7 @@ if (!isAuthenticated()) {
     exit;
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -246,7 +247,7 @@ if (!isAuthenticated()) {
             backButton: document.getElementById('backButton')
         };
 
-        // Charger les photos existantes
+        // Fonction optimisée pour charger les photos
         async function loadPhotos() {
             try {
                 const response = await fetch('/api/direction-photos.php');
@@ -257,21 +258,18 @@ if (!isAuthenticated()) {
                     return;
                 }
 
-                const photoHTML = photos.map(photo => {
-                    console.log('Création élément pour:', photo.filename, photo.url);
-                    return `
-                        <div class="photo-card" data-filename="${photo.filename}">
-                            <img src="/assets/img/direction/${photo.filename}" alt="Photo direction" loading="lazy" />
-                            <div class="photo-controls">
-                                <button class="photo-rotate-left" data-filename="${photo.filename}" title="Rotation gauche">↺</button>
-                                <button class="photo-rotate-right" data-filename="${photo.filename}" title="Rotation droite">↻</button>
-                                <button class="photo-delete" data-filename="${photo.filename}">×</button>
-                            </div>
+                const photoCards = photos.map(photo => `
+                    <div class="photo-card" data-photo-id="${photo.id}">
+                        <img src="${photo.url}" alt="Photo direction" loading="lazy" data-id="${photo.id}" />
+                        <div class="photo-controls">
+                            <button class="photo-rotate-left" data-id="${photo.id}" title="Rotation gauche">↺</button>
+                            <button class="photo-rotate-right" data-id="${photo.id}" title="Rotation droite">↻</button>
+                            <button class="photo-delete" data-id="${photo.id}">×</button>
                         </div>
-                    `;
-                }).join('');
+                    </div>
+                `).join('');
 
-                elements.photosGrid.innerHTML = photoHTML;
+                elements.photosGrid.innerHTML = photoCards;
             } catch (error) {
                 console.error('Erreur de chargement:', error);
                 showStatus('Erreur lors du chargement des photos.', false);
@@ -279,73 +277,30 @@ if (!isAuthenticated()) {
         }
 
         // Fonction optimisée pour supprimer une photo
-        async function deletePhoto(filename) {
-            try {
-                const card = elements.photosGrid.querySelector(`[data-filename="${filename}"]`);
-                if (card) {
-                    card.style.opacity = '0.5'; // Feedback visuel immédiat
-                }
-
-                const response = await fetch(`/api/direction-photos/${filename}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    if (card) {
-                        card.remove(); // Suppression immédiate de la carte
-                    }
-                    showStatus('Photo supprimée avec succès !', true);
-                } else {
-                    if (card) {
-                        card.style.opacity = '1'; // Restaurer l'opacité si erreur
-                    }
-                    throw new Error('Erreur lors de la suppression');
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                showStatus('Erreur lors de la suppression de la photo.', false);
+        async function deletePhoto(id) {
+            if (!confirm('Voulez-vous vraiment supprimer cette photo ?')) {
+                return;
             }
-        }
 
-        // Ajoutez cette fonction pour la rotation
-        async function rotateImage(filename, degrees) {
             try {
-                const card = elements.photosGrid.querySelector(`[data-filename="${filename}"]`);
-                const img = card?.querySelector('img');
-                if (card) {
-                    card.style.opacity = '0.5';
-                }
-
-                const response = await fetch('/api/rotate-photo', {
+                const response = await fetch('/api/delete-photo.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        filename: filename,
-                        type: 'direction',
-                        degrees: degrees
-                    })
+                    body: JSON.stringify({ id, type: 'direction' })
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    if (img && data.url) {
-                        img.src = data.url; // Mettre à jour directement l'URL de l'image avec le timestamp
-                    }
-                    if (card) {
-                        card.style.opacity = '1';
-                    }
-                    showStatus('Photo pivotée avec succès !', true);
-                } else {
-                    if (card) {
-                        card.style.opacity = '1';
-                    }
-                    throw new Error('Erreur lors de la rotation');
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la suppression');
                 }
+
+                await loadPhotos();
+                showStatus('Photo supprimée avec succès !', true);
+
             } catch (error) {
                 console.error('Erreur:', error);
-                showStatus('Erreur lors de la rotation de la photo.', false);
+                showStatus('Erreur lors de la suppression de la photo.', false);
             }
         }
 
@@ -362,29 +317,30 @@ if (!isAuthenticated()) {
             
             // Gestion des clics sur les boutons de suppression
             elements.photosGrid.addEventListener('click', async (e) => {
-                if (e.target.matches('.photo-delete')) {
-                    const filename = e.target.dataset.filename;
-                    await deletePhoto(filename);
-                } else if (e.target.matches('.photo-rotate-left')) {
-                    const filename = e.target.dataset.filename;
-                    await rotateImage(filename, -90);
+                if (e.target.matches('.photo-rotate-left')) {
+                    const id = e.target.dataset.id;
+                    await rotateImage(id, -90);
                 } else if (e.target.matches('.photo-rotate-right')) {
-                    const filename = e.target.dataset.filename;
-                    await rotateImage(filename, 90);
+                    const id = e.target.dataset.id;
+                    await rotateImage(id, 90);
+                } else if (e.target.matches('.photo-delete')) {
+                    if (confirm('Voulez-vous vraiment supprimer cette photo ?')) {
+                        const id = e.target.dataset.id;
+                        await deletePhoto(id);
+                    }
                 }
             });
 
             elements.backButton?.addEventListener('click', () => window.history.back());
         });
 
-        // Ajouter ces gestionnaires d'événements
-        elements.uploadZone.addEventListener('click', () => elements.fileInput.click());
-        elements.uploadZone.addEventListener('dragover', (e) => {
+        uploadZone.addEventListener('click', () => elements.fileInput.click());
+        uploadZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            elements.uploadZone.style.borderColor = '#5eb3ec';
+            uploadZone.style.borderColor = '#5eb3ec';
         });
 
-        elements.uploadZone.addEventListener('drop', (e) => {
+        uploadZone.addEventListener('drop', (e) => {
             e.preventDefault();
             handleFiles(e.dataTransfer.files);
         });
@@ -418,6 +374,48 @@ if (!isAuthenticated()) {
                 } catch (error) {
                     showStatus('Erreur lors du téléchargement de la photo.', false);
                 }
+            }
+        }
+
+        // Fonction pour faire pivoter une image
+        async function rotateImage(id, degrees) {
+            try {
+                const formData = new FormData();
+                formData.append('id', id);
+                formData.append('angle', degrees);
+                formData.append('type', 'direction');
+
+                // Trouver l'image à pivoter
+                const card = document.querySelector(`[data-photo-id="${id}"]`);
+                const img = card?.querySelector('img');
+                if (card) {
+                    card.style.opacity = '0.5';
+                }
+
+                const response = await fetch('/api/rotate-photo.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la rotation');
+                }
+
+                // Forcer le rechargement de l'image
+                if (img) {
+                    const currentSrc = img.src.split('?')[0];
+                    img.src = `${currentSrc}?t=${Date.now()}`;
+                    card.style.opacity = '1';
+                }
+
+                showStatus('Photo pivotée avec succès !', true);
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                if (card) {
+                    card.style.opacity = '1';
+                }
+                showStatus('Erreur lors de la rotation de la photo.', false);
             }
         }
     </script>

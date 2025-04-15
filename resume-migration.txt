@@ -61,4 +61,96 @@ b) Conversion technique :
 5. Déploiement sur IONOS
 
 Note : Le projet original Node.js reste fonctionnel pendant toute la durée de la migration
-pour assurer la continuité du service. 
+pour assurer la continuité du service.
+
+7. PLANNING DÉTAILLÉ DE LA MIGRATION (31/03/2024)
+----------------------------------
+ÉTAPE 1 : Structure de Base (2-3 heures)
+
+PRIORITÉ #1 - PROBLÈME DE CONNEXION À RÉSOUDRE
+---------------------------------------------
+- Le formulaire soumet à /api/auth.php mais la redirection ne fonctionne pas
+- Conflit potentiel entre login.js et la soumission du formulaire
+- Points à vérifier :
+  * Sessions PHP
+  * Logs d'erreur PHP
+  * Connexion base de données dans auth.php
+  * Fonction isAuthenticated()
+
+MODIFICATIONS EFFECTUÉES (31/03/2025)
+-----------------------------------
+1. Sécurité et Authentification
+   - Protection par authentification sur toutes les pages
+   - Exception pour affichage-dynamique.html
+   - Configuration des redirections post-authentification
+
+2. Gestion des Documents
+   - Création des pages de gestion des documents direction
+   - Mise en place du système d'upload
+   - Création des icônes pour différents types de documents
+
+3. Base de données
+   - Création table documents_direction
+   - Configuration des accès
+
+POINTS À FINALISER
+-----------------
+1. Authentification
+   - Résoudre problème de redirection post-login
+   - Vérifier sécurité des sessions
+   - Tester système complet d'authentification
+
+2. Protection des Pages
+   - Vérifier protection effective de toutes les pages
+   - Tester les exceptions (affichage-dynamique.html)
+
+3. Gestion des Documents
+   - Tester upload/download des documents
+   - Vérifier droits d'accès
+
+NOTES TECHNIQUES
+---------------
+- Serveur : PHP 7.3.29
+- Base de données : MySQL (IONOS)
+- Restrictions : Accès BDD uniquement depuis serveurs IONOS 
+
+RÉSUMÉ DE LA MIGRATION - 1er Avril 2024
+
+MATIN :
+- Migration des fichiers .html vers .php
+- Ajout de l'authentification PHP sur toutes les pages
+- Correction des liens dans les fichiers pour pointer vers .php au lieu de .html
+- Restauration du contenu original de cuisine.php et direction.php
+- Mise en place de la gestion des sessions
+
+APRÈS-MIDI :
+- Création des endpoints d'API pour la gestion des photos :
+  * /api/cuisine-photos.php (listing des photos)
+  * /api/direction-photos.php (listing des photos)
+  * /api/rotate-photo.php (rotation des images)
+  * /api/upload_photo.php (upload des photos)
+- Mise à jour des chemins de stockage :
+  * Photos cuisine : /assets/img/cuisine/
+  * Photos direction : /assets/img/direction/
+  * Menus cuisine : /assets/data/menu-cuisine/
+  * Documents direction : /assets/data/document-direction/
+- Suppression de l'ancien dossier /uploads/ non utilisé
+
+RESTE À FAIRE :
+1. Vérifier le bon fonctionnement de l'upload des photos
+2. Tester la rotation des images
+3. Vérifier la gestion des documents (upload et suppression)
+4. Créer les diaporamas pour :
+   - La timeline cuisine
+   - La timeline direction
+5. Vérifier les liens entre les sections admin :
+   - admin-photos-cuisine -> diaporama cuisine
+   - admin-photos-direction -> diaporama direction
+   - admin-menu-cuisine -> diaporama cuisine
+   - admin-documents-direction -> diaporama direction
+
+PROBLÈMES CONNUS :
+- L'ordinateur rame, un redémarrage pourrait être nécessaire
+- Upload des photos à tester après redémarrage
+
+Note : Tous les fichiers sont en place, mais un test complet du système est nécessaire après le redémarrage. 

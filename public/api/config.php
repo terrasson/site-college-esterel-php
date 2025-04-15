@@ -19,9 +19,11 @@ function handleError($errno, $errstr, $errfile, $errline) {
     if (DEBUG_MODE) {
         echo "Erreur [$errno] $errstr<br />\n";
         echo "Ligne $errline dans $errfile<br />\n";
-    } else {
-        error_log("Erreur [$errno] $errstr dans $errfile à la ligne $errline");
     }
 }
 
-set_error_handler('handleError'); 
+set_error_handler('handleError');
+
+// Supprimer ou commenter les error_log
+// error_log("Configuration chargée");
+// error_log("Variables d'environnement chargées"); 

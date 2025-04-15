@@ -11,7 +11,9 @@ if (!isAuthenticated()) {
 
 // Récupérer toutes les photos de cuisine depuis la base de données
 $pdo = getPDOConnection();
-$stmt = $pdo->query("SELECT id, url FROM photos_cuisine ORDER BY id DESC");
+$type = $_GET['type'] ?? 'cuisine';
+$table = $type === 'direction' ? 'photos_direction' : 'photos_cuisine';
+$stmt = $pdo->query("SELECT id, url FROM $table ORDER BY id DESC");
 $photos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
@@ -818,24 +820,14 @@ $photos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 `).join('');
 
                 // Réinitialiser le drag and drop
-                initializeDragAndDrop();
+                const mediaItems = document.querySelectorAll('.media-item');
+                mediaItems.forEach(item => {
+                    item.addEventListener('dragstart', handleDragStart);
+                });
             } catch (error) {
                 console.error('Erreur:', error);
                 showStatus('Erreur lors du chargement des médias', 'error');
             }
-        }
-
-        // Fonction pour initialiser le drag and drop
-        function initializeDragAndDrop() {
-            const mediaItems = document.querySelectorAll('.media-item');
-            const timeline = document.getElementById('timeline');
-
-            mediaItems.forEach(item => {
-                item.addEventListener('dragstart', handleDragStart);
-            });
-
-            timeline.addEventListener('dragover', handleDragOver);
-            timeline.addEventListener('drop', handleDrop);
         }
 
         // Fonction pour mettre à jour l'affichage de la timeline

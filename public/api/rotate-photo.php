@@ -29,7 +29,8 @@ try {
 
     // Récupérer les données
     $id = $_POST['id'] ?? null;
-    $angle = (int)($_POST['angle'] ?? 90);
+    $angle = $_POST['angle'] ?? 0;
+    $type = $_POST['type'] ?? 'cuisine';
 
     // Inverser l'angle pour corriger le sens de rotation
     $angle = -$angle;
@@ -42,7 +43,10 @@ try {
 
     // Récupérer le chemin du fichier
     $pdo = getPDOConnection();
-    $stmt = $pdo->prepare("SELECT url FROM photos_cuisine WHERE id = ?");
+    
+    // Sélectionner la bonne table selon le type
+    $table = $type === 'direction' ? 'photos_direction' : 'photos_cuisine';
+    $stmt = $pdo->prepare("SELECT url FROM $table WHERE id = ?");
     $stmt->execute([$id]);
     $photo = $stmt->fetch();
 

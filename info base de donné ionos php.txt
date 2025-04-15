@@ -1,0 +1,20 @@
+Copiez le code suivant et insérez-le dans votre script PHP afin d’établir une connexion à la base de données. Pour votre sécurité, le mot de passe n’est pas affiché. Veuillez modifier votre mot de passe manuellement dans le code.
+
+<?php
+  $host_name = 'db5017557615.hosting-data.io';
+  $database = 'dbs14063447';
+  $user_name = 'dbu697756';
+  $password = '<Veuillez saisir ici votre mot de passe.>';
+
+  $link = new mysqli($host_name, $user_name, $password, $database);
+
+  if ($link->connect_error) {
+    die('<p>La connexion au serveur MySQL a échoué: '. $link->connect_error .'</p>');
+  } else {
+    echo '<p>Connexion au serveur MySQL établie avec succès.</p>';
+  }
+?>
+Accès à la base de données uniquement via votre site Web / présence Web
+Veuillez toujours vous connecter à votre base de données en passant par votre site Web / présence Web. Pour des raisons de sécurité, l’accès direct à la base de données, par exemple via votre ordinateur local (connexion ODBC externe), n’est pas possible.
+
+Afin de protéger vos données, votre base de données se trouve sur un serveur dédié de base de données protégé par un pare-feu.

@@ -1,0 +1,452 @@
+=== DÉBUT ROTATION ===Includes OKPOST data: Array
+(
+    [id] => undefined
+    [angle] => 90
+)
+GET data: Array
+(
+)
+Raw input: ID reçu: undefinedAngle reçu: 90ERREUR ROTATION: Photo non trouvée dans la base de donnéesTrace: #0 {main}=== FIN ROTATION ====== DÉBUT ROTATION ===Includes OKPOST data: Array
+(
+    [id] => undefined
+    [angle] => 90
+)
+GET data: Array
+(
+)
+Raw input: ID reçu: undefinedAngle reçu: 90ERREUR ROTATION: Photo non trouvée dans la base de donnéesTrace: #0 {main}=== FIN ROTATION ====== DÉBUT ROTATION ===Includes OKPOST data: Array
+(
+    [id] => undefined
+    [angle] => 90
+)
+GET data: Array
+(
+)
+Raw input: ID reçu: undefinedAngle reçu: 90ERREUR ROTATION: Photo non trouvée dans la base de donnéesTrace: #0 {main}=== FIN ROTATION ====== DÉBUT ROTATION ===Includes OKPOST data: Array
+(
+    [id] => undefined
+    [angle] => 90
+)
+GET data: Array
+(
+)
+Raw input: ID reçu: undefinedAngle reçu: 90ERREUR ROTATION: Photo non trouvée dans la base de donnéesTrace: #0 {main}=== FIN ROTATION ====== DÉBUT ROTATION ===Includes OKPOST data: Array
+(
+    [id] => undefined
+    [angle] => 90
+)
+GET data: Array
+(
+)
+Raw input: ID reçu: undefinedAngle reçu: 90ERREUR ROTATION: Photo non trouvée dans la base de donnéesTrace: #0 {main}=== FIN ROTATION ====== DÉBUT ROTATION ===Includes OKPOST data: Array
+(
+    [id] => undefined
+    [angle] => 90
+)
+GET data: Array
+(
+)
+Raw input: ID reçu: undefinedAngle reçu: 90ERREUR ROTATION: Photo non trouvée dans la base de donnéesTrace: #0 {main}=== FIN ROTATION ====== DÉBUT ROTATION ===Includes OK=== DÉBUT ROTATION ===Includes OK=== DÉBUT ROTATION ===Includes OK=== DÉBUT ROTATION ===Includes OK=== DÉBUT ROTATION ===Includes OK=== DÉBUT ROTATION ===Includes OK=== DÉBUT ROTATION ===Includes OK=== DÉBUT ROTATION ===Includes OK=== DÉBUT ROTATION ===Includes OK=== DÉBUT ROTATION ===Includes OK=== DÉBUT ROTATION ===
+Includes OK=== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 4
+    [angle] => 90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 4, Angle: 90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744614380.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 4
+    [angle] => 90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 4, Angle: 90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744614380.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 4
+    [angle] => 90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 4, Angle après inversion: -90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744614380.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 4
+    [angle] => 90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 4, Angle après inversion: -90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744614380.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 3
+    [angle] => 90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 3, Angle après inversion: -90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744555288.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 3
+    [angle] => -90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 3, Angle après inversion: 90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744555288.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 1
+    [angle] => 90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 1, Angle après inversion: -90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744552407.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 1
+    [angle] => -90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 1, Angle après inversion: 90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744552407.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 2
+    [angle] => 90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 2, Angle après inversion: -90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744553134.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 2
+    [angle] => -90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 2, Angle après inversion: 90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744553134.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 4
+    [angle] => 90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 4, Angle après inversion: -90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744614380.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 5
+    [angle] => 90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 5, Angle après inversion: -90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744617391.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 1
+    [angle] => 90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 1, Angle après inversion: -90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744552407.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 1
+    [angle] => 90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 1, Angle après inversion: -90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744552407.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 2
+    [angle] => 90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 2, Angle après inversion: -90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/cuisine/cuisine_1744553134.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 2
+    [angle] => 90
+    [type] => direction
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 2, Angle après inversion: -90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../uploads/direction/67fe0fa4a271a_images.jpeg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 1
+    [angle] => -90
+    [type] => direction
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 1, Angle après inversion: 90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../uploads/direction/67fe0dc2014f5_images (3).jpeg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 12
+    [angle] => 90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 12, Angle après inversion: -90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/direction/direction_1744702423.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 10
+    [angle] => -90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 10, Angle après inversion: 90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/direction/direction_1744700531.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ====== DÉBUT ROTATION ===
+Includes OKPOST data: Array
+(
+    [id] => 7
+    [angle] => -90
+)
+
+GET data: Array
+(
+)
+
+Raw input: 
+ID: 7, Angle après inversion: 90
+Fichier: /Users/fredericterrasson/site-college-esterel-php/public/api/../assets/img/direction/direction_1744699200.jpg
+Permissions: 0644
+Propriétaire: 501
+Image chargée
+Rotation effectuée
+Image sauvegardée
+=== FIN ROTATION ===
+=== FIN ROTATION ===

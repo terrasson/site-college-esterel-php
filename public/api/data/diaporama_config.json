@@ -1,0 +1,64 @@
+{
+    "cuisine": {
+        "medias": [
+            {
+                "type": "image",
+                "path": "http:\/\/localhost:8080\/assets\/img\/direction\/direction_1744700415.jpg",
+                "name": "",
+                "duration": 5,
+                "transition": "fade",
+                "comment": "",
+                "font": "Arial",
+                "fontSize": 24,
+                "textColor": "#ffffff",
+                "textPosition": "top-left",
+                "textBackground": false
+            },
+            {
+                "type": "image",
+                "path": "http:\/\/localhost:8080\/assets\/img\/direction\/direction_1744700447.jpg",
+                "name": "",
+                "duration": 5,
+                "transition": "fade",
+                "comment": "",
+                "font": "Arial",
+                "fontSize": 24,
+                "textColor": "#ffffff",
+                "textPosition": "top-left",
+                "textBackground": false
+            }
+        ],
+        "schedules": []
+    },
+    "direction": {
+        "medias": [
+            {
+                "type": "image",
+                "path": "http:\/\/localhost:8080\/uploads\/direction\/67fe162a71edd_Harcelement.jpg",
+                "name": "Photo",
+                "duration": 5,
+                "transition": "fade",
+                "comment": "",
+                "font": "Arial",
+                "fontSize": 24,
+                "textColor": "#ffffff",
+                "textPosition": "top-left",
+                "textBackground": false
+            },
+            {
+                "type": "image",
+                "path": "http:\/\/localhost:8080\/uploads\/direction\/67fe162a80832_Compress_20250124_183153_3438.jpg",
+                "name": "Photo",
+                "duration": 5,
+                "transition": "fade",
+                "comment": "",
+                "font": "Arial",
+                "fontSize": 24,
+                "textColor": "#ffffff",
+                "textPosition": "top-left",
+                "textBackground": false
+            }
+        ],
+        "schedules": []
+    }
+}
