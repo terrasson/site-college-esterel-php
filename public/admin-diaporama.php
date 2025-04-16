@@ -2,6 +2,7 @@
 session_start();
 require_once __DIR__ . '/api/config.php';
 require_once __DIR__ . '/api/functions.php';
+require_once __DIR__ . '/api/database.php';
 
 // Vérification de l'authentification
 if (!isAuthenticated()) {
@@ -9,8 +10,19 @@ if (!isAuthenticated()) {
     exit;
 }
 
-// Récupérer toutes les photos de cuisine depuis la base de données
+// Connexion à la base de données
 $pdo = getPDOConnection();
+
+// Récupérer les photos
+$photos = [];
+try {
+    $stmt = $pdo->query("SELECT * FROM photos ORDER BY id DESC");
+    $photos = $stmt->fetchAll();
+} catch (Exception $e) {
+    error_log($e->getMessage());
+}
+
+// Récupérer toutes les photos de cuisine depuis la base de données
 $type = $_GET['type'] ?? 'cuisine';
 $table = $type === 'direction' ? 'photos_direction' : 'photos_cuisine';
 $stmt = $pdo->query("SELECT id, url FROM $table ORDER BY id DESC");
@@ -645,12 +657,18 @@ $photos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             content.innerHTML = `
                 <div class="media-name">${media.name}</div>
                 <div class="timeline-controls">
-                    <input type="number" class="duration-input" value="5" min="1" max="60">
+                    <input type="number" class="duration-input" value="${media.duration || 5}" min="1" max="60">
                     <select class="transition-select">
-                        <option value="fade">Fondu</option>
-                        <option value="slide">Glissement</option>
-                        <option value="zoom">Zoom</option>
-                        <option value="fade-zoom">Fondu + Zoom</option>
+                        <option value="fade" ${media.transition === 'fade' ? 'selected' : ''}>Fondu</option>
+                        <option value="slide" ${media.transition === 'slide' ? 'selected' : ''}>Glissement</option>
+                        <option value="zoom" ${media.transition === 'zoom' ? 'selected' : ''}>Zoom</option>
+                        <option value="fade-zoom" ${media.transition === 'fade-zoom' ? 'selected' : ''}>Fondu + Zoom</option>
+                        <option value="slide-fade" ${media.transition === 'slide-fade' ? 'selected' : ''}>Glissement + Fondu</option>
+                        <option value="spiral" ${media.transition === 'spiral' ? 'selected' : ''}>Spirale</option>
+                        <option value="flip" ${media.transition === 'flip' ? 'selected' : ''}>Retournement</option>
+                        <option value="bounce" ${media.transition === 'bounce' ? 'selected' : ''}>Rebond</option>
+                        <option value="rotate" ${media.transition === 'rotate' ? 'selected' : ''}>Rotation</option>
+                        <option value="blur" ${media.transition === 'blur' ? 'selected' : ''}>Flou</option>
                     </select>
                     <button class="remove-btn" onclick="this.closest('.timeline-item').remove(); updateTimelineData();">×</button>
                 </div>
@@ -1071,6 +1089,12 @@ $photos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <option value="slide" ${media.transition === 'slide' ? 'selected' : ''}>Glissement</option>
                             <option value="zoom" ${media.transition === 'zoom' ? 'selected' : ''}>Zoom</option>
                             <option value="fade-zoom" ${media.transition === 'fade-zoom' ? 'selected' : ''}>Fondu + Zoom</option>
+                            <option value="slide-fade" ${media.transition === 'slide-fade' ? 'selected' : ''}>Glissement + Fondu</option>
+                            <option value="spiral" ${media.transition === 'spiral' ? 'selected' : ''}>Spirale</option>
+                            <option value="flip" ${media.transition === 'flip' ? 'selected' : ''}>Retournement</option>
+                            <option value="bounce" ${media.transition === 'bounce' ? 'selected' : ''}>Rebond</option>
+                            <option value="rotate" ${media.transition === 'rotate' ? 'selected' : ''}>Rotation</option>
+                            <option value="blur" ${media.transition === 'blur' ? 'selected' : ''}>Flou</option>
                         </select>
                         <button class="remove-btn" onclick="this.closest('.timeline-item').remove(); updateTimelineData();">×</button>
                     </div>

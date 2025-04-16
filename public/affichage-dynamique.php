@@ -1035,6 +1035,159 @@ try {
             window.history.back();
         });
     });
+
+    function applyTransition(currentSlide, nextSlide, transition = 'fade') {
+        // Définir les animations en fonction du type de transition
+        switch (transition) {
+            case 'slide':
+                currentSlide.style.animation = 'slideOut 1s forwards';
+                nextSlide.style.animation = 'slideIn 1s forwards';
+                break;
+            
+            case 'zoom':
+                currentSlide.style.animation = 'zoomOut 1s forwards';
+                nextSlide.style.animation = 'zoomIn 1s forwards';
+                break;
+            
+            case 'fade-zoom':
+                currentSlide.style.animation = 'fadeZoomOut 1s forwards';
+                nextSlide.style.animation = 'fadeZoomIn 1s forwards';
+                break;
+            
+            case 'slide-fade':
+                currentSlide.style.animation = 'slideFadeOut 1s forwards';
+                nextSlide.style.animation = 'slideFadeIn 1s forwards';
+                break;
+            
+            case 'spiral':
+                currentSlide.style.animation = 'spiralOut 1s forwards';
+                nextSlide.style.animation = 'spiralIn 1s forwards';
+                break;
+            
+            case 'flip':
+                currentSlide.style.animation = 'flipOut 1s forwards';
+                nextSlide.style.animation = 'flipIn 1s forwards';
+                break;
+            
+            case 'bounce':
+                currentSlide.style.animation = 'bounceOut 1s forwards';
+                nextSlide.style.animation = 'bounceIn 1s forwards';
+                break;
+            
+            case 'rotate':
+                currentSlide.style.animation = 'rotateOut 1s forwards';
+                nextSlide.style.animation = 'rotateIn 1s forwards';
+                break;
+            
+            case 'blur':
+                currentSlide.style.animation = 'blurOut 1s forwards';
+                nextSlide.style.animation = 'blurIn 1s forwards';
+                break;
+            
+            case 'fade':
+            default:
+                currentSlide.style.animation = 'fadeOut 1s forwards';
+                nextSlide.style.animation = 'fadeIn 1s forwards';
+                break;
+        }
+    }
+
+    // Ajouter les styles CSS pour toutes les animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); }
+            to { transform: translateX(-100%); }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        
+        @keyframes zoomOut {
+            from { transform: scale(1); opacity: 1; }
+            to { transform: scale(0.5); opacity: 0; }
+        }
+        @keyframes zoomIn {
+            from { transform: scale(1.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes fadeZoomOut {
+            from { transform: scale(1); opacity: 1; }
+            to { transform: scale(1.2); opacity: 0; }
+        }
+        @keyframes fadeZoomIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes slideFadeOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(-50%); opacity: 0; }
+        }
+        @keyframes slideFadeIn {
+            from { transform: translateX(50%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes spiralOut {
+            from { transform: rotate(0) scale(1); opacity: 1; }
+            to { transform: rotate(360deg) scale(0); opacity: 0; }
+        }
+        @keyframes spiralIn {
+            from { transform: rotate(-360deg) scale(0); opacity: 0; }
+            to { transform: rotate(0) scale(1); opacity: 1; }
+        }
+        
+        @keyframes flipOut {
+            from { transform: perspective(400px) rotateY(0); }
+            to { transform: perspective(400px) rotateY(90deg); }
+        }
+        @keyframes flipIn {
+            from { transform: perspective(400px) rotateY(-90deg); }
+            to { transform: perspective(400px) rotateY(0); }
+        }
+        
+        @keyframes bounceOut {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.5; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes rotateOut {
+            from { transform: rotate(0); opacity: 1; }
+            to { transform: rotate(180deg); opacity: 0; }
+        }
+        @keyframes rotateIn {
+            from { transform: rotate(-180deg); opacity: 0; }
+            to { transform: rotate(0); opacity: 1; }
+        }
+        
+        @keyframes blurOut {
+            from { filter: blur(0); opacity: 1; }
+            to { filter: blur(20px); opacity: 0; }
+        }
+        @keyframes blurIn {
+            from { filter: blur(20px); opacity: 0; }
+            to { filter: blur(0); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
   </script>
 </body>
 
