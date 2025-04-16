@@ -103,7 +103,7 @@ if (!isAuthenticated()) {
         <button class="nav-button" onclick="window.location.href='affichage-dynamique.php'">Affichage
             Dynamique</button>
         <button class="nav-button" onclick="window.location.href='contact.php'">Contact et Crédits</button>
-        <button class="nav-button" onclick="logout()" style="background-color: #e74c3c;">Déconnexion</button>
+        <button class="nav-button" style="background-color: #dc3545;" onclick="window.location.href='/api/logout.php'">Déconnexion</button>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {

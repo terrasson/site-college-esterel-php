@@ -91,7 +91,7 @@
                 <p>- Mme Sandrine Daugeron : Principale du Collège de l'Estérel à Saint-Raphaël</p>
                 <p>- M Frédéric Tisch : Chef de cuisine du Collège de l'Estérel</p>
                 <p>- M Frédéric Terrasson : Agent de maintenance du Collège de l'Estérel</p>
-                <p>Version : 1.2 - Mars 2025</p>
+                <p>Version : 1.3 - Avril 2025</p>
             </div>
         </div>
     </div>
