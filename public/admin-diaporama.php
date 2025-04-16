@@ -551,9 +551,9 @@ $photos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php foreach ($photos as $photo): ?>
                     <div class="media-item" draggable="true" data-type="image" data-path="<?= htmlspecialchars($photo['url']) ?>">
                         <div class="preview-container">
-                            <img src="<?= htmlspecialchars($photo['url']) ?>" alt="<?= htmlspecialchars($photo['filename']) ?>">
+                            <img src="<?= htmlspecialchars($photo['url']) ?>" alt="Photo">
                         </div>
-                        <div class="media-name"><?= htmlspecialchars($photo['filename']) ?></div>
+                        <div class="media-name"><?= basename($photo['url']) ?></div>
                         <div class="media-type">Image</div>
                     </div>
                     <?php endforeach; ?>
