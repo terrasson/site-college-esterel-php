@@ -705,7 +705,7 @@ try {
         <a href="#" class="logo">
           <img src="/assets/img/logo-ministere-education.png" alt="Logo Education national" />
         </a>
-        <a href="#" class="logo">
+        <a href="https://moncollege.var.fr" target="_blank" class="logo">
           <img src="/assets/img/logo-departement.png" alt="Logo Departement" />
         </a>
         <a href="/contact.php" class="info-link" title="Contact et informations">ⓘ</a>
