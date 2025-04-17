@@ -189,113 +189,132 @@ if (!isAuthenticated()) {
     </div>
 
     <script>
-        const uploadZone = document.getElementById('uploadZone');
-        const fileInput = document.getElementById('fileInput');
-        const documentsGrid = document.getElementById('documentsGrid');
-        const statusMessage = document.getElementById('statusMessage');
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInput = document.getElementById('fileInput');
 
-        uploadZone.addEventListener('click', () => fileInput.click());
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.style.borderColor = '#5eb3ec';
-        });
+            // Gestion du drag & drop
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('upload-zone--over');
+            });
 
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            handleFiles(e.dataTransfer.files);
-        });
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('upload-zone--over');
+            });
 
-        fileInput.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
-        });
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('upload-zone--over');
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
 
-        async function handleFiles(files) {
-            for (const file of files) {
-                const validTypes = ['.pdf', '.doc', '.docx'];
-                const fileExt = '.' + file.name.split('.').pop().toLowerCase();
-                
-                if (!validTypes.includes(fileExt)) {
-                    showStatus('Format de fichier non supporté. Utilisez PDF ou Word.', false);
-                    continue;
+            // Gestion du clic pour sélectionner des fichiers
+            uploadZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+            // Fonction pour gérer l'upload
+            async function handleFiles(files) {
+                for (const file of files) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    try {
+                        const response = await fetch('/api/upload_menu.php', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const data = await response.json();
+                        if (data.success) {
+                            loadMenus();  // Recharger la liste des menus
+                        } else {
+                            throw new Error(data.error || 'Erreur lors de l\'upload');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Erreur lors de l\'upload du fichier');
+                    }
                 }
+            }
 
-                const formData = new FormData();
-                formData.append('menu', file);
-
+            // Fonction pour charger la liste des menus
+            async function loadMenus() {
                 try {
-                    console.log('Tentative d\'upload du menu:', file.name);
-                    const response = await fetch('/api/upload-menu-cuisine', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    const result = await response.json();
-                    console.log('Réponse du serveur:', result);
-
-                    if (response.ok) {
-                        showStatus('Menu téléchargé avec succès !', true);
-                        loadMenus();
-                    } else {
-                        throw new Error(result.message || 'Erreur lors du téléchargement');
+                    const response = await fetch('/api/menu-cuisine.php');
+                    const data = await response.json();
+                    if (data.success) {
+                        displayMenus(data.menus);
                     }
                 } catch (error) {
-                    console.error('Erreur:', error);
-                    showStatus('Erreur lors du téléchargement du menu.', false);
+                    console.error('Error:', error);
+                    showError('Erreur lors du chargement des menus');
                 }
             }
-        }
 
-        async function loadMenus() {
-            try {
-                const response = await fetch('/api/menu-cuisine');
-                const menus = await response.json();
-                
-                documentsGrid.innerHTML = menus.map(menu => `
-                    <div class="document-card" data-filename="${menu.filename}">
-                        <div class="document-name">${menu.originalName}</div>
+            // Fonction pour afficher les menus
+            function displayMenus(menus) {
+                const container = document.getElementById('documentsGrid');
+                container.innerHTML = '';
+
+                menus.forEach(menu => {
+                    const menuElement = document.createElement('div');
+                    menuElement.className = 'document-card';
+                    menuElement.innerHTML = `
+                        <div class="document-name">${menu.title}</div>
                         <div class="document-type">${menu.type}</div>
-                        <a href="/assets/data/menu-cuisine/${menu.filename}" class="btn btn-primary" download>
-                            Télécharger
-                        </a>
-                        <button class="document-delete" onclick="deleteMenu('${menu.filename}')">×</button>
-                    </div>
-                `).join('');
-            } catch (error) {
-                showStatus('Erreur lors du chargement des menus.', false);
-            }
-        }
-
-        async function deleteMenu(filename) {
-            if (!confirm('Voulez-vous vraiment supprimer ce menu ?')) return;
-
-            try {
-                const response = await fetch(`/api/menu-cuisine/${filename}`, {
-                    method: 'DELETE'
+                        <div class="document-actions">
+                            <a href="${menu.url}" target="_blank" class="btn btn-primary">Voir</a>
+                            <button onclick="deleteDocument(${menu.id})" class="btn btn-danger">Supprimer</button>
+                        </div>
+                    `;
+                    container.appendChild(menuElement);
                 });
-
-                if (response.ok) {
-                    showStatus('Menu supprimé avec succès !', true);
-                    loadMenus();
-                } else {
-                    throw new Error('Erreur lors de la suppression');
-                }
-            } catch (error) {
-                showStatus('Erreur lors de la suppression du menu.', false);
             }
-        }
 
-        function showStatus(message, isSuccess) {
-            statusMessage.textContent = message;
-            statusMessage.className = 'status-message ' + (isSuccess ? 'status-success' : 'status-error');
-            statusMessage.style.display = 'block';
+            // Fonction pour supprimer un document
+            window.deleteDocument = async function(id) {
+                if (!confirm('Voulez-vous vraiment supprimer ce document ?')) return;
 
-            setTimeout(() => {
-                statusMessage.style.display = 'none';
-            }, 5000);
-        }
+                try {
+                    const response = await fetch(`/api/menu-cuisine.php?id=${id}`, {
+                        method: 'DELETE'
+                    });
 
-        // Chargement initial des menus
-        loadMenus();
+                    if (!response.ok) throw new Error('Erreur lors de la suppression');
+
+                    const data = await response.json();
+                    if (data.success) {
+                        loadMenus();
+                        showStatus('Document supprimé avec succès', true);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showStatus('Erreur lors de la suppression', false);
+                }
+            }
+
+            // Fonction pour afficher les messages de statut
+            function showStatus(message, isSuccess) {
+                const statusMessage = document.getElementById('statusMessage');
+                statusMessage.textContent = message;
+                statusMessage.className = 'status-message ' + (isSuccess ? 'status-success' : 'status-error');
+                statusMessage.style.display = 'block';
+
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 3000);
+            }
+
+            // Fonction pour afficher les erreurs
+            function showError(message) {
+                showStatus(message, false);
+            }
+
+            // Charger les menus au démarrage
+            loadMenus();
+        });
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('backButton').addEventListener('click', () => {

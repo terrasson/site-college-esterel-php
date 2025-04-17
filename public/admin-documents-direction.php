@@ -186,114 +186,131 @@ if (!isAuthenticated()) {
     </div>
 
     <script>
-        const uploadZone = document.getElementById('uploadZone');
-        const fileInput = document.getElementById('fileInput');
-        const documentsGrid = document.getElementById('documentsGrid');
-        const statusMessage = document.getElementById('statusMessage');
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInput = document.getElementById('fileInput');
 
-        uploadZone.addEventListener('click', () => fileInput.click());
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.style.borderColor = '#5eb3ec';
-        });
+            // Gestion du drag & drop
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('upload-zone--over');
+            });
 
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            handleFiles(e.dataTransfer.files);
-        });
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('upload-zone--over');
+            });
 
-        fileInput.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
-        });
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('upload-zone--over');
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
 
-        async function handleFiles(files) {
-            for (const file of files) {
-                const validTypes = ['.pdf', '.doc', '.docx', '.ppt', '.pptx'];
-                const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+            // Gestion du clic pour sélectionner des fichiers
+            uploadZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', () => handleFiles(fileInput.files));
 
-                if (!validTypes.includes(fileExt)) {
-                    showStatus('Format de fichier non supporté. Utilisez PDF, Word ou PowerPoint.', false);
-                    continue;
+            // Fonction pour gérer l'upload
+            async function handleFiles(files) {
+                for (const file of files) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    try {
+                        const response = await fetch('/api/upload-direction-document.php', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const data = await response.json();
+                        if (data.success) {
+                            loadDocuments();
+                            showStatus('Document uploadé avec succès', true);
+                        } else {
+                            throw new Error(data.error || 'Erreur lors de l\'upload');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showStatus('Erreur lors de l\'upload du fichier', false);
+                    }
                 }
+            }
 
-                const formData = new FormData();
-                formData.append('document', file);
-
+            // Fonction pour charger la liste des documents
+            async function loadDocuments() {
                 try {
-                    console.log('Tentative d\'upload du fichier:', file.name);
-                    const response = await fetch('/api/upload-direction-document', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    const result = await response.json();
-                    console.log('Réponse du serveur:', result);
-
-                    if (response.ok) {
-                        showStatus('Document téléchargé avec succès !', true);
-                        loadDocuments();
-                    } else {
-                        throw new Error(result.message || 'Erreur lors du téléchargement');
+                    const response = await fetch('/api/direction-documents.php');
+                    const data = await response.json();
+                    if (data.success) {
+                        displayDocuments(data.documents);
                     }
                 } catch (error) {
-                    console.error('Erreur:', error);
-                    showStatus('Erreur lors du téléchargement du document.', false);
+                    console.error('Error:', error);
+                    showStatus('Erreur lors du chargement des documents', false);
                 }
             }
-        }
 
-        async function loadDocuments() {
-            try {
-                const response = await fetch('/api/direction-documents');
-                const documents = await response.json();
+            // Fonction pour afficher les documents
+            function displayDocuments(documents) {
+                const container = document.getElementById('documentsGrid');
+                container.innerHTML = '';
 
-                documentsGrid.innerHTML = documents.map(doc => `
-                    <div class="document-card" data-filename="${doc.filename}">
-                        <div class="document-name">${doc.originalName}</div>
+                documents.forEach(doc => {
+                    const docElement = document.createElement('div');
+                    docElement.className = 'document-card';
+                    docElement.innerHTML = `
+                        <div class="document-name">${doc.title}</div>
                         <div class="document-type">${doc.type}</div>
-                        <a href="/assets/data/document-direction/${doc.filename}" class="btn btn-primary" download>
-                            Télécharger
-                        </a>
-                        <button class="document-delete" onclick="deleteDocument('${doc.filename}')">×</button>
-                    </div>
-                `).join('');
-            } catch (error) {
-                showStatus('Erreur lors du chargement des documents.', false);
-            }
-        }
-
-        async function deleteDocument(filename) {
-            if (!confirm('Voulez-vous vraiment supprimer ce document ?')) return;
-
-            try {
-                const response = await fetch(`/api/direction-documents/${filename}`, {
-                    method: 'DELETE'
+                        <div class="document-actions">
+                            <a href="${doc.url}" target="_blank" class="btn btn-primary">Voir</a>
+                            <button onclick="deleteDocument(${doc.id})" class="btn btn-danger">Supprimer</button>
+                        </div>
+                    `;
+                    container.appendChild(docElement);
                 });
-
-                if (response.ok) {
-                    showStatus('Document supprimé avec succès !', true);
-                    loadDocuments();
-                } else {
-                    throw new Error('Erreur lors de la suppression');
-                }
-            } catch (error) {
-                console.error('Erreur:', error);
-                showStatus('Erreur lors de la suppression du document.', false);
             }
-        }
 
-        function showStatus(message, isSuccess) {
-            statusMessage.textContent = message;
-            statusMessage.className = 'status-message ' + (isSuccess ? 'status-success' : 'status-error');
-            statusMessage.style.display = 'block';
+            // Fonction pour supprimer un document
+            window.deleteDocument = async function(id) {
+                if (!confirm('Voulez-vous vraiment supprimer ce document ?')) return;
 
-            setTimeout(() => {
-                statusMessage.style.display = 'none';
-            }, 5000);
-        }
+                try {
+                    const response = await fetch(`/api/direction-documents.php?id=${id}`, {
+                        method: 'DELETE'
+                    });
 
-        // Chargement initial des documents
-        loadDocuments();
+                    if (!response.ok) throw new Error('Erreur lors de la suppression');
+
+                    const data = await response.json();
+                    if (data.success) {
+                        showStatus('Document supprimé avec succès', true);
+                        // Attendre que le message soit affiché avant de recharger
+                        setTimeout(() => {
+                            window.location.reload(); // Force le rechargement de la page
+                        }, 1000);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showStatus('Erreur lors de la suppression', false);
+                }
+            }
+
+            // Fonction pour afficher les messages de statut
+            function showStatus(message, isSuccess) {
+                const statusMessage = document.getElementById('statusMessage');
+                statusMessage.textContent = message;
+                statusMessage.className = 'status-message ' + (isSuccess ? 'status-success' : 'status-error');
+                statusMessage.style.display = 'block';
+
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 3000);
+            }
+
+            // Charger les documents au démarrage
+            loadDocuments();
+        });
 
         document.addEventListener('DOMContentLoaded', () => {
             // Stocker la page actuelle dans l'historique

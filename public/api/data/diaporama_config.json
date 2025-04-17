@@ -3,10 +3,10 @@
         "medias": [
             {
                 "type": "image",
-                "path": "http:\/\/localhost:8080\/assets\/img\/direction\/direction_1744700415.jpg",
-                "name": "",
+                "path": "http:\/\/localhost:8080\/uploads\/cuisine\/67ff3cfe65837_Logo_De%CC%81partement_Var_2015.svg.png",
+                "name": "Photo",
                 "duration": 5,
-                "transition": "fade",
+                "transition": "spiral",
                 "comment": "",
                 "font": "Arial",
                 "fontSize": 24,
@@ -16,10 +16,10 @@
             },
             {
                 "type": "image",
-                "path": "http:\/\/localhost:8080\/assets\/img\/direction\/direction_1744700447.jpg",
-                "name": "",
+                "path": "http:\/\/localhost:8080\/uploads\/cuisine\/67ff3d26a26eb_IMG_6657.JPEG",
+                "name": "Photo",
                 "duration": 5,
-                "transition": "fade",
+                "transition": "zoom",
                 "comment": "",
                 "font": "Arial",
                 "fontSize": 24,
@@ -34,7 +34,7 @@
         "medias": [
             {
                 "type": "image",
-                "path": "http:\/\/localhost:8080\/uploads\/direction\/67fe162a71edd_Harcelement.jpg",
+                "path": "http:\/\/localhost:8080\/uploads\/direction\/67ff3d89889f0_IMG_7757_batcheditor_fotor.jpg",
                 "name": "Photo",
                 "duration": 5,
                 "transition": "fade",
@@ -50,7 +50,7 @@
                 "path": "http:\/\/localhost:8080\/uploads\/direction\/67fe162a80832_Compress_20250124_183153_3438.jpg",
                 "name": "Photo",
                 "duration": 5,
-                "transition": "fade",
+                "transition": "flip",
                 "comment": "",
                 "font": "Arial",
                 "fontSize": 24,
